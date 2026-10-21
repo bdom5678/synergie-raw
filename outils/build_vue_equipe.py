@@ -108,7 +108,8 @@ footer{padding:16px max(16px,4vw);font-size:12px;color:var(--muted)}
 <main><form id="f" autocomplete="off">
 <h2>Vue équipe</h2>
 <p>Suivi de la campagne en lecture seule, mis à jour chaque jour ouvré vers 7 h. Saisissez le mot de passe communiqué par le responsable de la campagne.</p>
-<label>Mot de passe<input type="password" id="pw" required autocomplete="current-password" autofocus></label>
+<label>Mot de passe<input type="password" id="pw" required autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus placeholder="XXXX-XXXX-XXXX-XXXX"></label>
+<label class="rem"><input type="checkbox" id="show"> Afficher le mot de passe</label>
 <label class="rem"><input type="checkbox" id="rem"> Se souvenir sur cet appareil</label>
 <button id="go" type="submit">Ouvrir le suivi</button>
 <div class="err" id="err" role="alert"></div>
@@ -117,6 +118,8 @@ footer{padding:16px max(16px,4vw);font-size:12px;color:var(--muted)}
 <script>
 const P="__PAYLOAD__",IT=__ITER__;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const cands=s=>{const t=String(s).normalize('NFKC').toUpperCase().replace(/[^A-Z0-9]/g,'');const out=[s,s.trim()];if(t.length===16)out.push(t.match(/.{4}/g).join('-'));out.push(t);return [...new Set(out.filter(Boolean))]};
+async function openAny(s){for(const c of cands(s)){try{await open(c);return c}catch(_){}}throw new Error('bad')}
 async function open(pw){
   const raw=b64(P),salt=raw.slice(0,16),iv=raw.slice(16,28),ct=raw.slice(28);
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
@@ -125,12 +128,13 @@ async function open(pw){
   document.open();document.write(html);document.close();
 }
 const K='synergie-vue-pw';
+document.getElementById('show').addEventListener('change',e=>{document.getElementById('pw').type=e.target.checked?'text':'password'});
 document.getElementById('f').addEventListener('submit',async e=>{
   e.preventDefault();const pw=document.getElementById('pw').value,btn=document.getElementById('go'),err=document.getElementById('err');
   if(!window.crypto||!crypto.subtle){err.textContent="Ce navigateur ne peut pas ouvrir la page. Utilisez une version récente de Chrome, Edge, Firefox ou Safari.";return}
   btn.disabled=true;btn.textContent='Ouverture…';err.textContent='';
-  try{const r=document.getElementById('rem').checked;await (async()=>{if(r){try{localStorage.setItem(K,pw)}catch(_){}}else{try{localStorage.removeItem(K)}catch(_){}}})();await open(pw)}
-  catch(_){btn.disabled=false;btn.textContent='Ouvrir le suivi';err.textContent='Mot de passe incorrect. Vérifiez les majuscules et les tirets.'}
+  try{const r=document.getElementById('rem').checked;try{localStorage.removeItem(K)}catch(_){}const ok=await openAny(pw);if(r){try{localStorage.setItem(K,ok)}catch(_){}}}
+  catch(_){btn.disabled=false;btn.textContent='Ouvrir le suivi';err.textContent='Mot de passe incorrect. Il compte 16 caractères (lettres et chiffres), en 4 groupes de 4.'}
 });
 (async()=>{let pw=null;try{pw=localStorage.getItem(K)}catch(_){}if(pw&&window.crypto&&crypto.subtle){try{await open(pw)}catch(_){try{localStorage.removeItem(K)}catch(__){}}}})();
 </script></body></html>"""
