@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 TEAM_TABS = ['dash', 'refs', 'zones', 'cbo', 'sim']
 ITER = 600_000
 REF_KEEP = ['dateRef', 'client', 'secteur', 'produit', 'cboId', 'cbo', 'agence', 'zone', 'statut', 'primeEstimee',
-            'dateCotation', 'primeSignee', 'primeEncaissee', 'fraisGestion', 'cotisation', 'periodicite', 'createdAt']
+            'primeTotaleEstimee', 'dateCotation', 'primeSignee', 'primeEncaissee', 'primeTotaleEncaissee', 'fraisGestion', 'cotisation', 'periodicite', 'createdAt']
 CBO_DROP = {'updatedBy', 'notes', 'createdBy'}
 
 
