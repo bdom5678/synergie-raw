@@ -186,4 +186,4 @@ function main() {
     .catch(e => { console.error(e); process.exit(1); });
 }
 if (require.main === module) main();
-module.exports = { P };
+module.exports = { P, THEME };
