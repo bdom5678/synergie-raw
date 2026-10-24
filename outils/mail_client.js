@@ -53,10 +53,10 @@ function main() {
   }).join('\n\n');
   const oppH = `<div style="margin:14px 0"><p style="margin:0 0 6px;font-size:15px;font-weight:bold;color:#0E3A75">${seul ? 'Ce qui pourrait aussi protéger votre activité' : 'Pour aller plus loin : ce qui pourrait aussi protéger votre activité'}</p>
 <ul style="margin:0 0 0 18px;padding:0">${o.nonVie.map(q => `<li style="margin-bottom:4px"><b>${esc(q.label)}</b> : ${esc(q.pourquoi)}${q.repere ? ' <i>' + esc(q.repere) + '</i>' : ''}</li>`).join('')}</ul></div>
-<div style="border-left:4px solid #E3B23C;background:#0E3A75;color:#FFFFFF;border-radius:6px;padding:12px 14px;margin:10px 0">
-<p style="margin:0 0 4px;font-size:15px;font-weight:bold">Votre premier actif, ce sont vos collaborateurs</p>
-<p style="margin:0 0 8px;font-size:12px;color:#E3B23C">RAWSUR Life, n°1 de l’assurance vie en RDC : 62 % du marché en 2024.</p>
-${o.vie.map(q => `<p style="margin:0 0 8px"><b>${esc(q.court || q.label)} · ${esc(q.accroche)}</b><br>${esc(q.args[0])}<br><i style="color:#D6E2F3">${esc(q.repere)}</i></p>`).join('')}</div>`;
+<div style="border:1px solid #D5DEEC;border-left:5px solid #E3B23C;background-color:#FFF8E6;color:#1F2937;border-radius:6px;padding:12px 14px;margin:10px 0">
+<p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#0E3A75">Votre premier actif, ce sont vos collaborateurs</p>
+<p style="margin:0 0 8px;font-size:12px;font-weight:bold;color:#8A6410">RAWSUR Life, n°1 de l’assurance vie en RDC : 62 % du marché en 2024.</p>
+${o.vie.map(q => `<p style="margin:0 0 8px;color:#1F2937"><b style="color:#0E3A75">${esc(q.court || q.label)} · ${esc(q.accroche)}</b><br>${esc(q.args[0])}<br><i style="color:#5B6B82">${esc(q.repere)}</i></p>`).join('')}</div>`;
   const oppT = `${seul ? 'Ce qui pourrait aussi protéger votre activité' : 'Pour aller plus loin : ce qui pourrait aussi protéger votre activité'} :\n${o.nonVie.map(q => `- ${q.label} : ${q.pourquoi}${q.repere ? ' ' + q.repere : ''}`).join('\n')}\n\nVotre premier actif, ce sont vos collaborateurs (RAWSUR Life, n°1 de l’assurance vie en RDC : 62 % du marché en 2024) :\n${o.vie.map(q => `- ${q.court || q.label} · ${q.accroche} ${q.args[0]} ${q.repere}`).join('\n')}`;
   const contacts = `Votre conseiller Rawbank : ${cbo}${cboMail ? ' (' + cboMail + ')' : ''}\nDesk Bancassurance & Partnerships : ${DESK}`;
   const clause = 'Repères indicatifs tirés d’offres réelles RAWSUR ; seule l’offre écrite de RAWSUR engage sur les tarifs et les garanties.';
