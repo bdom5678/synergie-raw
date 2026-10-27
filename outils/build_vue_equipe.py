@@ -15,7 +15,8 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 TEAM_TABS = ['dash', 'refs', 'zones', 'cbo', 'sim']
 ITER = 600_000
 REF_KEEP = ['dateRef', 'client', 'secteur', 'produit', 'cboId', 'cbo', 'agence', 'zone', 'statut', 'primeEstimee',
-            'primeTotaleEstimee', 'dateCotation', 'primeSignee', 'primeEncaissee', 'primeTotaleEncaissee', 'fraisGestion', 'cotisation', 'periodicite', 'createdAt']
+            'primeTotaleEstimee', 'dateCotation', 'primeSignee', 'primeEncaissee', 'primeTotaleEncaissee', 'fraisGestion', 'cotisation', 'periodicite', 'createdAt',
+            'dossierCompletLe', 'attente', 'attenteDepuis', 'offreLe', 'relancesTechnique', 'demandeRef']
 CBO_DROP = {'updatedBy', 'notes', 'createdBy'}
 
 
@@ -73,7 +74,7 @@ def build_inner(tool, data):
     h = h.replace("de l'onglet Paramètres", "de la campagne").replace("de l’onglet Paramètres", "de la campagne")
     # 9. données + styles de lecture seule
     payload = json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
-    css = ("<style>#btn-export,#btn-new,#c-new,#btn-relance,#draft-top,[data-edit],[data-dup],[data-cbo],[data-admin]{display:none!important}"
+    css = ("<style>#btn-export,#btn-new,#c-new,#btn-relance,#btn-relance-tech,#draft-top,[data-edit],[data-dup],[data-cbo],[data-admin]{display:none!important}"
            "#c-moves th:last-child,#c-moves td:last-child{display:none}</style>")
     h = h.replace('<script>', css + f'<script>window.__VUE_DATA={payload};</script><script>', 1)
     if len(h) < n0 * 0.5: fail('page produite anormalement courte')
