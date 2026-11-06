@@ -43,6 +43,9 @@ def build_inner(tool, data):
     # 2. la bibliothèque xlsx est conservée : elle sert à l'export Excel des classements par zone
     for bid in ('btn-pptx', 'btn-zones-xlsx', 'btn-zones-pptx', 'z-sel'):
         if f'id="{bid}"' not in h: fail(f'bouton d’export « {bid} » introuvable dans l’outil')
+    # la bibliothèque PowerPoint est intégrée à la page (pas de CDN) ; aucun « <script> » nu ne doit précéder le script principal
+    if 'id="lib-pptxgenjs"' not in h: fail('bibliothèque PowerPoint intégrée introuvable dans l’outil')
+    if h.count('<script>') != 1: fail(f'{h.count("<script>")} balises <script> nues dans l’outil (1 attendue)')
     # 3. titre
     h, n = re.subn(r'<title>.*?</title>', '<title>Synergie Corporate · Vue équipe</title>', h, count=1, flags=re.S)
     if not n: fail('balise <title> introuvable')
