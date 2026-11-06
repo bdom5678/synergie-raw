@@ -16,7 +16,7 @@ TEAM_TABS = ['dash', 'refs', 'zones', 'cbo', 'sim']
 ITER = 600_000
 REF_KEEP = ['dateRef', 'client', 'secteur', 'produit', 'cboId', 'cbo', 'agence', 'zone', 'statut', 'primeEstimee',
             'primeTotaleEstimee', 'dateCotation', 'primeSignee', 'primeEncaissee', 'primeTotaleEncaissee', 'fraisGestion', 'cotisation', 'periodicite', 'createdAt',
-            'dossierCompletLe', 'attente', 'attenteDepuis', 'offreLe', 'relancesTechnique', 'demandeRef']
+            'dossierCompletLe', 'attente', 'attenteDepuis', 'attenteMotif', 'derniereRelance', 'derniereRelancePar', 'offreLe', 'relancesTechnique', 'demandeRef']
 CBO_DROP = {'updatedBy', 'notes', 'createdBy'}
 
 
