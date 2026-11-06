@@ -16,7 +16,8 @@ TEAM_TABS = ['dash', 'refs', 'zones', 'cbo', 'sim']
 ITER = 600_000
 REF_KEEP = ['dateRef', 'client', 'secteur', 'produit', 'cboId', 'cbo', 'agence', 'zone', 'statut', 'primeEstimee',
             'primeTotaleEstimee', 'dateCotation', 'primeSignee', 'primeEncaissee', 'primeTotaleEncaissee', 'fraisGestion', 'cotisation', 'periodicite', 'createdAt',
-            'dossierCompletLe', 'attente', 'attenteDepuis', 'attenteMotif', 'derniereRelance', 'derniereRelancePar', 'offreLe', 'relancesTechnique', 'demandeRef']
+            'dossierCompletLe', 'attente', 'attenteDepuis', 'attenteMotif', 'derniereRelance', 'derniereRelancePar', 'offreLe',
+            'relancesTechnique', 'demandeRef']
 CBO_DROP = {'updatedBy', 'notes', 'createdBy'}
 
 
@@ -32,6 +33,28 @@ def load_dir(path):
         d['_id'] = os.path.splitext(os.path.basename(f))[0]
         out.append(d)
     return out
+
+
+EXPORT_JS = r"""
+/* ---------- vue équipe : export des référencements (CSV pour Excel, filtres de l'onglet Référencements appliqués) ---------- */
+function vueRefsFiltrees(){const q=key($('f-q').value),st=$('f-st').value,pr=$('f-pr').value,zo=$('f-zo').value;
+  return refs.filter(r=>(!st||r.statut===st)&&(!pr||r.produit===pr)&&(!zo||zoneOf(r)===zo)&&(!q||[r.client,r.cbo,r.agence,r.secteur].some(v=>key(v).includes(q)))).sort((a,b)=>(b.dateRef||'').localeCompare(a.dateRef||''))}
+$('btn-export').textContent='Exporter les référencements';
+$('btn-export').title='Fichier CSV (s’ouvre dans Excel) des référencements, avec les filtres de l’onglet Référencements';
+$('btn-export').addEventListener('click',()=>{
+  const rl=r=>{const i=relanceInfo(r);return i&&(i.due||i.recente)?i:null};
+  const C=[['Date de référencement',r=>r.dateRef||''],['Client',r=>r.client],['Secteur',r=>r.secteur],['Produit',r=>plabel(r.produit)],['CBO',r=>r.cbo],['Agence',r=>r.agence],['Zone',r=>zoneOf(r)],['Statut',r=>r.statut],
+    ['Prime totale espérée (USD)',r=>espTot(r)||''],['Prime nette espérée (USD)',r=>espNet(r)||''],['Date de cotation',r=>r.dateCotation||''],['Prime totale encaissée (USD)',r=>encTot(r)||''],['Prime nette encaissée (USD)',r=>encNet(r)||''],
+    ['Commission CBO (USD)',r=>{const c=commissionOf(r);return c==null?'':Math.round(c)}],
+    ['À relancer',r=>{const i=rl(r);return i?(i.due?'Oui':'Relancée, en attente de réponse'):''}],['Qui doit agir',r=>{const i=rl(r);return i?quiLabel(i.qui):''}],['Motif',r=>{const i=rl(r);return i?i.motif:''}],['Depuis',r=>{const i=rl(r);return i?ageLabel(i):''}],['Dernière relance',r=>{const i=rl(r);return i&&i.rel?i.rel:''}]];
+  const cell=v=>{let x=typeof v==='number'?String(Math.round(v*100)/100).replace('.',','):String(v??'');if(/^[=+\-@]/.test(x))x="'"+x;x=x.replace(/"/g,'""');return /[;"\n\r]/.test(x)?`"${x}"`:x};
+  const rows=vueRefsFiltrees();
+  const csv='﻿'+[C.map(c=>c[0]).join(';'),...rows.map(r=>C.map(c=>cell(c[1](r))).join(';'))].join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`synergie-referencements-${window.__VUE_DATA.stampIso||today()}.csv`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  toast(`${rows.length} référencement${rows.length>1?'s':''} exporté${rows.length>1?'s':''}`);
+});
+"""
 
 
 def build_inner(tool, data):
@@ -74,12 +97,20 @@ def build_inner(tool, data):
     script = f"const TEAM_TABS={json.dumps(TEAM_TABS)};\n" + script
     # 8. textes qui renvoient à des onglets ou des droits absents
     script = script.replace(" Seuls les administrateurs ajoutent, réaffectent ou retirent un CBO.", "")
+    # 8b. export des référencements : l'outil passe par claude.ai, la vue équipe télécharge directement
+    i = script.find("$('btn-export').addEventListener('click',async()=>{")
+    j = script.find("/* ---------- rôles et accès ---------- */", i)
+    if i < 0 or j < 0: fail('bloc d’export introuvable dans l’outil')
+    for fn in ('function relanceInfo(', 'const quiLabel=', 'const ageLabel=', 'espTot=r=>', 'encTot=r=>', 'function commissionOf(', "$('f-q')", "$('f-st')", "$('f-pr')", "$('f-zo')"):
+        if fn not in script: fail(f'« {fn} » introuvable dans l’outil')
+    script = script[:i] + EXPORT_JS.strip() + "\n\n" + script[j:]
     h = h[:s_start] + script + h[s_end:]
     h = h.replace("de l'onglet Paramètres", "de la campagne").replace("de l’onglet Paramètres", "de la campagne")
     # 9. données + styles de lecture seule
     payload = json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
-    css = ("<style>#btn-export,#btn-new,#c-new,#btn-relance,#btn-relance-tech,#draft-top,[data-edit],[data-dup],[data-cbo],[data-admin]{display:none!important}"
-           "#c-moves th:last-child,#c-moves td:last-child{display:none}</style>")
+    css = ("<style>#btn-new,#c-new,#btn-relance,#btn-relance-tech,#draft-top,[data-edit],[data-dup],[data-cbo],[data-admin]{display:none!important}"
+           "#c-moves th:last-child,#c-moves td:last-child{display:none}"
+           ".panel:has(#relances){grid-column:1/-1}#relances td{white-space:normal}#relances td .pill,#relances td.r{white-space:nowrap}</style>")
     h = h.replace('<script>', css + f'<script>window.__VUE_DATA={payload};</script><script>', 1)
     if len(h) < n0 * 0.5: fail('page produite anormalement courte')
     return h
@@ -167,7 +198,7 @@ def main():
     if not cbos: fail('aucun CBO lu')
     now = datetime.datetime.now(ZoneInfo('Africa/Kinshasa'))
     stamp = now.strftime('%d/%m/%Y à %H:%M')
-    inner = build_inner(tool, {'settings': settings, 'cbos': cbos, 'refs': refs, 'stamp': stamp})
+    inner = build_inner(tool, {'settings': settings, 'cbos': cbos, 'refs': refs, 'stamp': stamp, 'stampIso': now.strftime('%Y-%m-%d')})
 
     salt, iv = secrets.token_bytes(16), secrets.token_bytes(12)
     key = hashlib.pbkdf2_hmac('sha256', a.password.encode('utf-8'), salt, ITER, 32)
