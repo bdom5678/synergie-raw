@@ -40,8 +40,9 @@ def build_inner(tool, data):
     # 1. onglets réservés aux administrateurs
     h, n = re.subn(r'\s*<button[^>]*data-tab="(?:param|import|team)"[^>]*>.*?</button>', '', h, flags=re.S)
     if n < 3: fail(f'onglets à masquer introuvables ({n}/3)')
-    # 2. bibliothèque d'import inutile
-    h = re.sub(r'<script src="[^"]*xlsx[^"]*"></script>', '', h)
+    # 2. la bibliothèque xlsx est conservée : elle sert à l'export Excel des classements par zone
+    for bid in ('btn-pptx', 'btn-zones-xlsx', 'btn-zones-pptx', 'z-sel'):
+        if f'id="{bid}"' not in h: fail(f'bouton d’export « {bid} » introuvable dans l’outil')
     # 3. titre
     h, n = re.subn(r'<title>.*?</title>', '<title>Synergie Corporate · Vue équipe</title>', h, count=1, flags=re.S)
     if not n: fail('balise <title> introuvable')
