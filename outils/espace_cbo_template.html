@@ -1,0 +1,260 @@
+<title>Espace CBO Synergie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Mise en page : bandeau bleu RAWSUR, puis une colonne de panneaux (mon espace, simulateur) ; deux colonnes au-delà de 900 px */
+:root{
+  --navy:#242F51; --blue:#2A4782; --gold:#F4A50D; --gold-ink:#8A5A00;
+  --bg:#F3F5FA; --surface:#FFFFFF; --ink:#1B2238; --muted:#5D6785; --line:#DCE1EC; --soft:#EAEEF7;
+  --ok:#1E7A4F; --ok-bg:#E3F3EA; --warn:#9A6200; --warn-bg:#FCF1DC; --info:#2A4782; --info-bg:#E6ECF8; --bad:#A33A3A; --bad-bg:#F8E6E6;
+  --f-display:'Poppins',ui-sans-serif,system-ui,sans-serif; --f-body:'Public Sans',ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --navy:#0F1527; --blue:#1A2A52; --gold:#F6B53A; --gold-ink:#F6B53A;
+  --bg:#121726; --surface:#1A2134; --ink:#E7EBF5; --muted:#9BA5C0; --line:#2C3550; --soft:#222B42;
+  --ok:#6FD3A0; --ok-bg:#183326; --warn:#F2C26B; --warn-bg:#3A2D12; --info:#9DB6EE; --info-bg:#1E2A47; --bad:#F09A9A; --bad-bg:#3D1F23; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --navy:#0F1527; --blue:#1A2A52; --gold:#F6B53A; --gold-ink:#F6B53A;
+  --bg:#121726; --surface:#1A2134; --ink:#E7EBF5; --muted:#9BA5C0; --line:#2C3550; --soft:#222B42;
+  --ok:#6FD3A0; --ok-bg:#183326; --warn:#F2C26B; --warn-bg:#3A2D12; --info:#9DB6EE; --info-bg:#1E2A47; --bad:#F09A9A; --bad-bg:#3D1F23; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff}
+header .wrap{padding-block:28px 34px;display:flex;flex-wrap:wrap;gap:18px 32px;align-items:flex-end;justify-content:space-between}
+.eyebrow{font:600 12px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+h1{font:700 clamp(28px,6vw,40px)/1.1 var(--f-display);margin:8px 0 6px;text-wrap:balance}
+.lede{margin:0;max-width:52ch;color:#D7DEEF}
+.countdown{display:flex;gap:14px;align-items:baseline}
+.countdown b{font:700 44px/1 var(--f-display);color:var(--gold);font-variant-numeric:tabular-nums}
+.countdown span{font-size:13px;color:#D7DEEF;max-width:16ch}
+main .wrap{padding-block:22px 40px;display:grid;gap:20px;grid-template-columns:1fr}
+@media (min-width:900px){main .wrap{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+.panel h2{font:600 20px/1.2 var(--f-display);margin:0 0 4px}
+.panel .sub{margin:0 0 16px;color:var(--muted);font-size:14px}
+label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+select,input{width:100%;font:500 15px var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px 12px;min-height:44px}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.grid2{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.row>*{flex:1 1 160px;min-width:0}
+button{font:600 15px var(--f-display);border:0;border-radius:9px;padding:11px 18px;min-height:44px;cursor:pointer}
+.btn{background:var(--gold);color:#241A00}
+.btn:hover{filter:brightness(1.05)}
+.btn-ghost{background:var(--soft);color:var(--ink)}
+.code-input{letter-spacing:.3em;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.msg{font-size:14px;margin:10px 0 0;min-height:1.2em}
+.msg.err{color:var(--bad)}
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin:16px 0}
+.tile{background:var(--soft);border-radius:11px;padding:12px 14px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted);font-weight:600}
+.tile .v{font:700 22px/1.2 var(--f-display);font-variant-numeric:tabular-nums;margin-top:4px}
+.tile .n{font-size:12px;color:var(--muted)}
+.tile.hl{background:var(--gold);color:#241A00}.tile.hl .k,.tile.hl .n{color:#4A3500}
+.who{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.who b{font:600 18px var(--f-display)}
+.who small{color:var(--muted)}
+.deals{display:grid;gap:8px;margin-top:6px}
+.deal{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px}
+.deal .cl{font-weight:600;overflow-wrap:anywhere}
+.deal .meta{font-size:13px;color:var(--muted)}
+.deal .amt{text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted)}
+.deal .amt b{display:block;font:600 16px var(--f-display);color:var(--ink)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:99px;letter-spacing:.02em}
+.p-enc{background:var(--ok-bg);color:var(--ok)}.p-cot{background:var(--warn-bg);color:var(--warn)}.p-ref{background:var(--info-bg);color:var(--info)}.p-per{background:var(--bad-bg);color:var(--bad)}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center}
+.sim-lines{display:grid;gap:10px}
+.sim-line{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:8px;align-items:center}
+.sim-line .rate{grid-column:1/-1;font-size:12.5px;color:var(--muted);margin-top:-4px}
+@media (max-width:520px){.sim-line{grid-template-columns:minmax(0,1fr) auto}.sim-line select{grid-column:1/-1}}
+.x{background:transparent;color:var(--muted);min-width:44px;padding:0;font-size:22px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{background:var(--soft);color:var(--ink);font:500 13px var(--f-body);padding:6px 11px;min-height:34px;border-radius:99px}
+.result{margin-top:18px;border-radius:12px;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:18px}
+.result .big{font:700 34px/1.1 var(--f-display);color:var(--gold);font-variant-numeric:tabular-nums}
+.result .lines{display:grid;gap:4px;margin-top:10px;font-size:14px;color:#D7DEEF;font-variant-numeric:tabular-nums}
+.result .lines div{display:flex;justify-content:space-between;gap:10px}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.step{border:1px solid var(--line);border-radius:11px;padding:10px;text-align:center;min-width:0}
+.step .pl{font:700 13px var(--f-display);color:var(--muted)}
+.step .bonus{font:700 20px var(--f-display);font-variant-numeric:tabular-nums}
+.step .thr{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.step.me{border-color:var(--gold);background:var(--warn-bg)}
+.proj{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--soft);font-size:14px}
+.note{font-size:12.5px;color:var(--muted);margin:14px 0 0}
+.rates{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.rates td{padding:7px 0;border-bottom:1px solid var(--line)}
+.rates td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+footer .wrap{padding-block:0 32px;color:var(--muted);font-size:12.5px}
+@media (prefers-reduced-motion:no-preference){.result .big{transition:color .2s}}
+</style>
+
+<header><div class="wrap">
+  <div>
+    <div class="eyebrow">Synergie Corporate · REF 2026</div>
+    <h1>Espace CBO</h1>
+    <p class="lede">Simulez vos commissions, suivez vos affaires référencées et voyez ce qu’il vous manque pour finir sur le podium de votre zone.</p>
+  </div>
+  <div class="countdown"><b id="jours">—</b><span id="jours-lbl">jours avant la clôture de la campagne</span></div>
+</div></header>
+
+<main><div class="wrap">
+  <section class="panel" id="espace" aria-labelledby="t-espace">
+    <h2 id="t-espace">Mes affaires</h2>
+    <p class="sub">Choisissez votre zone et votre nom, puis saisissez le code personnel reçu de l’équipe Bancassurance.</p>
+    <form id="f-login" autocomplete="off">
+      <div class="grid2">
+        <div><label for="sel-zone">Zone</label><select id="sel-zone"></select></div>
+        <div><label for="sel-cbo">Votre nom</label><select id="sel-cbo"></select></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label for="in-code">Code personnel</label><input id="in-code" class="code-input" maxlength="6" inputmode="text" autocapitalize="characters" spellcheck="false" placeholder="••••••"></div>
+        <div style="flex:0 0 auto"><button class="btn" type="submit" id="btn-open">Voir mes affaires</button></div>
+      </div>
+      <p class="msg" id="login-msg" role="status"></p>
+    </form>
+    <div id="mine" hidden></div>
+  </section>
+
+  <section class="panel" id="sim" aria-labelledby="t-sim">
+    <h2 id="t-sim">Simulateur de gains</h2>
+    <p class="sub">Indiquez, par produit, la prime nette annuelle que vous comptez faire encaisser d’ici la clôture.</p>
+    <div class="sim-lines" id="sim-lines"></div>
+    <div class="chips" id="chips"></div>
+    <div class="result" aria-live="polite">
+      <div style="font-size:13px;color:#D7DEEF">Commission estimée sur la simulation</div>
+      <div class="big" id="sim-total">0 $</div>
+      <div class="lines" id="sim-detail"></div>
+    </div>
+    <div id="rw-block"></div>
+    <details style="margin-top:16px"><summary style="cursor:pointer;font-weight:600">Taux de commission de la campagne</summary>
+      <table class="rates" id="rates"></table>
+    </details>
+    <p class="note">Commission calculée sur la prime nette HT encaissée (cotisation nette périodique pour CAREC et IFC), versée à la clôture de la campagne après communication des résultats. Montants indicatifs : seule l’offre écrite de RAWSUR et l’encaissement effectif font foi.</p>
+  </section>
+</div></main>
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script>
+const D=/*__DATA__*/null;
+const $=id=>document.getElementById(id);
+const nf=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0});
+const usd=v=>nf.format(Math.round(v||0)).replace(/ | /g,' ')+' $';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P=Object.fromEntries(D.produits.map(p=>[p.id,p]));
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const ZONES=['Kinshasa','Sud','Centre','Est'];
+let me=null; // données déchiffrées du CBO connecté
+let sim=[{p:'multirisque',v:10000},{p:'grouplife',v:5000}];
+
+/* compte à rebours */
+(()=>{const fin=new Date(D.fin+'T23:59:59+01:00'),n=Math.ceil((fin-Date.now())/864e5);
+  if(n>0){$('jours').textContent=n}else{$('jours').textContent='0';$('jours-lbl').textContent='campagne clôturée'}})();
+$('foot').textContent=`Données arrêtées le ${D.maj} (heure de Kinshasa), mises à jour chaque jour ouvré. Campagne du 19/10/2026 au 31/12/2026. Questions : ref-bancassurance@rawbank.cd`;
+
+/* sélection zone + CBO */
+function fillZones(){$('sel-zone').innerHTML='<option value="">Choisir…</option>'+ZONES.map(z=>`<option>${z}</option>`).join('')}
+function fillCbos(){const z=$('sel-zone').value;const l=D.cbos.filter(c=>c.zone===z).sort((a,b)=>a.nom.localeCompare(b.nom,'fr'));
+  $('sel-cbo').innerHTML=z?'<option value="">Choisir…</option>'+l.map(c=>`<option value="${esc(c.id)}">${esc(c.nom)}${c.agence?' · '+esc(c.agence):''}</option>`).join(''):'<option value="">Choisir d’abord la zone</option>';
+  $('sel-cbo').disabled=!z;renderRewards()}
+$('sel-zone').addEventListener('change',()=>{store.set('cbo-zone',$('sel-zone').value);fillCbos();closeMine()});
+$('sel-cbo').addEventListener('change',()=>{store.set('cbo-id',$('sel-cbo').value);closeMine()});
+
+/* déchiffrement */
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function unlock(id,code){const box=D.coffres[id];if(!box)throw new Error('absent');
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(code+'|'+id),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(box.s),iterations:D.iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(box.i)},key,b64(box.c));
+  return JSON.parse(new TextDecoder().decode(pt))}
+$('f-login').addEventListener('submit',async e=>{e.preventDefault();const id=$('sel-cbo').value,code=$('in-code').value.trim().toUpperCase();
+  const m=$('login-msg');m.className='msg';
+  if(!id){m.textContent='Choisissez votre zone et votre nom.';m.classList.add('err');return}
+  if(code.length!==6){m.textContent='Le code personnel compte 6 caractères.';m.classList.add('err');return}
+  m.textContent='Ouverture…';$('btn-open').disabled=true;
+  try{me=await unlock(id,code);m.textContent='';$('in-code').value='';renderMine();renderSim()}
+  catch(err){m.textContent='Code incorrect pour ce nom. Vérifiez le code reçu, ou demandez-le à ref-bancassurance@rawbank.cd.';m.classList.add('err')}
+  finally{$('btn-open').disabled=false}});
+function closeMine(){me=null;$('mine').hidden=true;$('f-login').hidden=false;renderSim()}
+
+/* mon espace */
+const commNet=(p,v)=>(v||0)*(P[p]?.taux||0)/100;
+const pillOf=st=>({'Encaissé':'p-enc','Coté':'p-cot','Référencé':'p-ref','Perdu':'p-per'}[st]||'p-ref');
+const dfr=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'';
+function placeTxt(p){return p===1?'1re place':p+'e place'}
+function renderMine(){const a=me.affaires;
+  const acq=a.filter(x=>x.st==='Encaissé').reduce((s,x)=>s+commNet(x.p,x.nn),0);
+  const enc=a.filter(x=>x.st==='Coté').reduce((s,x)=>s+commNet(x.p,x.ne),0);
+  const nE=a.filter(x=>x.st==='Encaissé').length,nC=a.filter(x=>x.st==='Coté').length;
+  const zi=D.zones[me.zone],bonus=me.place&&D.recompenses?(D.tiers[zi.tier][me.place-1]||0):0;
+  const placeTile=me.place?`<div class="tile hl"><div class="k">Place dans la zone ${esc(me.zone)}</div><div class="v">${placeTxt(me.place)}</div><div class="n">${D.recompenses?'Bonus visé : '+usd(bonus):'Sur '+zi.nEligibles+' CBO classés'}</div></div>`
+    :`<div class="tile"><div class="k">Place dans la zone ${esc(me.zone)}</div><div class="v">${me.eligible?'Hors podium':'Non classé'}</div><div class="n">${me.eligible?'Rang '+me.rang+' · voir le simulateur':'Il faut au moins une affaire encaissée'}</div></div>`;
+  $('mine').innerHTML=`<div class="who"><div><b>${esc(me.nom)}</b><br><small>${esc(me.agence)} · zone ${esc(me.zone)}</small></div><button type="button" class="btn-ghost" id="btn-close">Changer de CBO</button></div>
+   <div class="tiles">
+     <div class="tile"><div class="k">Commission acquise</div><div class="v">${usd(acq)}</div><div class="n">${nE} affaire${nE>1?'s':''} encaissée${nE>1?'s':''}</div></div>
+     <div class="tile"><div class="k">Commission en jeu</div><div class="v">${usd(enc)}</div><div class="n">${nC} offre${nC>1?'s':''} en attente de paiement</div></div>
+     <div class="tile"><div class="k">Affaires référencées</div><div class="v">${a.length}</div><div class="n">Encaissé : ${usd(me.ca)} (prime totale)</div></div>
+     ${placeTile}
+   </div>
+   <div class="deals">${a.length?a.map(x=>{const c=x.st==='Encaissé'?commNet(x.p,x.nn):x.st==='Coté'?commNet(x.p,x.ne):null;
+     const amt=x.st==='Encaissé'?`Encaissé ${usd(x.tn||x.nn)}`:x.st==='Coté'&&(x.te||x.ne)?`Offre ${usd(x.te||x.ne)}`:x.st==='Perdu'?'Affaire perdue':'Offre en préparation';
+     return `<div class="deal"><div><div class="cl">${esc(x.cl)}</div><div class="meta">${esc(P[x.p]?.label||x.p)} · ${dfr(x.d)}</div><span class="pill ${pillOf(x.st)}">${esc(x.st)}</span></div>
+       <div class="amt">${c!=null?`<b>${usd(c)}</b>${x.st==='Encaissé'?'commission':'commission possible'}`:'<b>—</b>'}<br>${amt}</div></div>`}).join('')
+     :'<div class="empty">Aucune affaire enregistrée à votre nom pour l’instant. Envoyez votre première fiche de référencement à ref-bancassurance@rawbank.cd.</div>'}</div>
+   <p class="note">Commission possible : calculée sur la prime nette de l’offre, acquise seulement après encaissement. Une affaire absente ou erronée ? Écrivez à ref-bancassurance@rawbank.cd.</p>`;
+  $('f-login').hidden=true;$('mine').hidden=false;$('btn-close').addEventListener('click',closeMine)}
+
+/* simulateur */
+try{const s=JSON.parse(store.get('cbo-sim')||'null');if(Array.isArray(s)&&s.length)sim=s.filter(l=>P[l.p]).slice(0,9)}catch(e){}
+function buildSim(){$('sim-lines').innerHTML=sim.map((l,i)=>`<div class="sim-line">
+  <select id="sp-${i}" data-i="${i}" data-k="p" aria-label="Produit">${D.produits.map(p=>`<option value="${p.id}"${p.id===l.p?' selected':''}>${esc(p.label)}</option>`).join('')}</select>
+  <input id="sv-${i}" data-i="${i}" data-k="v" type="number" min="0" step="500" inputmode="numeric" value="${l.v||''}" aria-label="${P[l.p].epargne?'Cotisation nette':'Prime nette'} en USD" placeholder="${P[l.p].epargne?'cotisation $':'prime nette $'}">
+  <button type="button" class="x" data-del="${i}" aria-label="Retirer cette ligne">×</button>
+  <div class="rate" id="sr-${i}"></div></div>`).join('');
+  $('chips').innerHTML=`<button type="button" class="chip" id="add-line">+ Ajouter un produit</button>`+[5000,10000,25000,50000].map(v=>`<button type="button" class="chip" data-all="${v}">Tout à ${usd(v)}</button>`).join('');
+  renderSim()}
+$('sim-lines').addEventListener('input',e=>{const t=e.target,i=+t.dataset.i;if(!sim[i])return;
+  if(t.dataset.k==='p'){sim[i].p=t.value;buildSim();return}sim[i].v=Math.max(0,Number(t.value)||0);renderSim()});
+$('sim-lines').addEventListener('change',e=>{if(e.target.dataset.k==='p'){sim[+e.target.dataset.i].p=e.target.value;buildSim()}});
+$('sim-lines').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(!d)return;sim.splice(+d.dataset.del,1);if(!sim.length)sim=[{p:'multirisque',v:0}];buildSim()});
+$('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='add-line'){const used=new Set(sim.map(l=>l.p));sim.push({p:(D.produits.find(p=>!used.has(p.id))||D.produits[0]).id,v:0});buildSim();return}
+  const v=+b.dataset.all;if(v){sim.forEach(l=>l.v=v);buildSim()}});
+function renderSim(){store.set('cbo-sim',JSON.stringify(sim));
+  let tot=0,base=0;sim.forEach((l,i)=>{const c=commNet(l.p,l.v);tot+=c;base+=l.v||0;const r=$('sr-'+i);
+    if(r)r.textContent=`${String(P[l.p].taux).replace('.',',')} % ${P[l.p].epargne?'de la cotisation nette périodique':'de la prime nette HT'} → ${usd(c)}`});
+  $('sim-total').textContent=usd(tot);
+  const acq=me?me.affaires.filter(x=>x.st==='Encaissé').reduce((s,x)=>s+commNet(x.p,x.nn),0):0;
+  $('sim-detail').innerHTML=`<div><span>Primes simulées</span><span>${usd(base)}</span></div>`+
+    (me?`<div><span>Commission déjà acquise</span><span>${usd(acq)}</span></div><div><span>Total possible avec la simulation</span><span>${usd(acq+tot)}</span></div>`:'');
+  renderRewards(base,tot)}
+function renderRewards(base,comm){if(base===undefined){base=sim.reduce((s,l)=>s+(l.v||0),0);comm=sim.reduce((s,l)=>s+commNet(l.p,l.v),0)}
+  const z=me?me.zone:$('sel-zone').value,box=$('rw-block');
+  if(!z){box.innerHTML=`<div class="proj">Choisissez votre zone en haut de page pour voir le podium et vous situer.</div>`;return}
+  const zi=D.zones[z],tv=D.tiers[zi.tier];
+  let pod=zi.podium.slice();if(me&&me.place)pod.splice(me.place-1,1);
+  const cur=me?me.ca:0,proj=cur+base;
+  const projPlace=base>0||me?.eligible?pod.filter(v=>v>proj).length+1:null;
+  const inPod=projPlace&&projPlace<=3;
+  const steps=[0,1,2].map(i=>{const thr=zi.podium[i];
+    return `<div class="step${inPod&&projPlace===i+1?' me':''}"><div class="pl">${i===0?'1er':i+1+'e'}</div>${D.recompenses?`<div class="bonus">${usd(tv[i])}</div>`:''}<div class="thr">${me&&me.place===i+1?'Vous : '+usd(thr):thr!=null?'Actuel : '+usd(thr):'Place libre'}</div></div>`}).join('');
+  let txt;
+  if(!projPlace)txt=`Saisissez un montant pour vous situer dans la zone ${esc(z)}.`;
+  else{const lead=pod[0]??0,gap=Math.max(0,lead-proj)+1;
+    txt=(me?`Avec ${usd(cur)} déjà encaissés et ${usd(base)} simulés, `:`Avec ${usd(base)} encaissés, `)+
+      (inPod?`vous seriez <b>${projPlace===1?'1er':projPlace+'e'} de la zone ${esc(z)}</b>${D.recompenses?` : bonus de <b>${usd(tv[projPlace-1])}</b>, soit <b>${usd(comm+(me?me.affaires.filter(x=>x.st==='Encaissé').reduce((s,x)=>s+commNet(x.p,x.nn),0):0)+tv[projPlace-1])}</b> de gains au total`:''}.`
+        :`vous seriez ${projPlace}e de la zone ${esc(z)}.`)+
+      (projPlace!==1?` Pour passer 1er, il faudrait environ ${usd(gap)} de primes encaissées en plus.`:'')}
+  box.innerHTML=`<h3 style="font:600 16px var(--f-display);margin:20px 0 0">Podium de la zone ${esc(z)}</h3>
+    <div class="podium">${steps}</div><div class="proj">${txt}</div>
+    <p class="note">${D.recompenses?'Récompenses indicatives, sous réserve de validation de la grille. ':''}Classement sur la prime totale encaissée de chaque CBO, au moins une affaire encaissée exigée. La simulation compte vos primes simulées comme encaissées.</p>`}
+$('rates').innerHTML=D.produits.map(p=>`<tr><td>${esc(p.label)}</td><td>${String(p.taux).replace('.',',')} %</td></tr>`).join('');
+fillZones();
+const z0=store.get('cbo-zone');if(z0&&ZONES.includes(z0))$('sel-zone').value=z0;
+fillCbos();
+const c0=store.get('cbo-id');if(c0&&D.cbos.some(c=>c.id===c0&&c.zone===$('sel-zone').value))$('sel-cbo').value=c0;
+buildSim();
+</script>
