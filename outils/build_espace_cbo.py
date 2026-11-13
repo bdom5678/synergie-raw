@@ -12,6 +12,7 @@ dans la page ni dans le dépôt.
 Usage :
   python3 build_espace_cbo.py --db DOSSIER_DB --template espace_cbo_template.html \
       --secret "SECRET" --out page.html [--codes codes.csv]
+  --codes-doc codes.json : document à écrire dans la base de l'outil (collection codes, doc cbo), lu par l'onglet CBO participants
   --db : dossier contenant referrals/*.json, cbos/*.json, config/settings.json
 """
 import argparse, base64, csv, datetime, glob, hashlib, hmac, json, os, secrets, sys
@@ -77,6 +78,7 @@ def main():
     ap.add_argument('--secret', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--codes', help='écrit la liste des codes (CSV) à transmettre aux CBO')
+    ap.add_argument('--codes-doc', help="écrit le document JSON {codes, maj} à enregistrer dans la base de l'outil (codes/cbo)")
     a = ap.parse_args()
     if len(a.secret) < 16:
         fail('secret trop court')
@@ -189,6 +191,10 @@ def main():
             w = csv.DictWriter(f, fieldnames=['zone', 'agence', 'cbo', 'email', 'code'], delimiter=';')
             w.writeheader()
             w.writerows(code_rows)
+    if a.codes_doc:
+        json.dump({'codes': {r_id: code_for(a.secret, r_id) for r_id in [c['id'] for c in public_cbos]},
+                   'maj': now.isoformat(timespec='minutes'), 'source': 'build_espace_cbo.py'},
+                  open(a.codes_doc, 'w', encoding='utf-8'), ensure_ascii=False)
     print(json.dumps({'ok': True, 'cbo': len(public_cbos), 'referencements': len(refs),
                       'rattaches': sum(len(s['refs']) for s in stats.values()), 'maj': data['maj']}))
 
