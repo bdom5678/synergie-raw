@@ -23,10 +23,10 @@ Page publique pour les CBO sans compte Claude : https://claude.ai/artifact/MGsf4
 - Onglet « CBO participants » : chaque CBO actif affiche « Code Espace CBO : XXXXXX » (tableau et fiche), visible des seuls administrateurs de l'outil. Document de base codes/cbo, règle d'accès read/write admin (vérifié : invisible au niveau « interact »).
 - Nouveau CBO ajouté dans l'outil : la fiche indique « attribué à la prochaine mise à jour » ; à l'étape 5 de la tâche « Vue équipe Synergie » (jours ouvrés 6 h 55), le générateur (option --codes-doc) calcule son code, l'inscrit dans codes/cbo et l'ajoute à l'Espace CBO dans la même exécution. Les codes existants ne changent pas.
 
-## Objectifs et documents (13/11/2026)
-- Après connexion, le CBO voit deux encadrés :
-  - « Référencements à réaliser » : part individuelle = arrondi supérieur de objectifRefs (500) / nombre de CBO actifs (7 pour 77 CBO), moins ses référencements ; rythme hebdomadaire jusqu'au 31/12 ; progression de la campagne (référencements enregistrés / 500).
+## Objectifs et documents (13/11/2026, révisé)
+- Après connexion, le CBO voit trois encadrés :
+  - « Mon objectif de référencements » : objectif individuel = réalisés + arrondi supérieur(k × (2 + racine(réalisés))). k répartit le reste à faire (objectifRefs − référencements enregistrés) en supposant que la moitié des CBO ayant déjà référé au moins une affaire n'atteindra pas son objectif : k = reste / (Σ poids des CBO sans référencement + ½ Σ poids des CBO ayant référé). Plus un CBO a référé, plus son objectif additionnel est élevé. Au 13/11 : 0 réalisé → 6 ; 1 → 10 ; 2 → 13 ; 5 → 18 ; 8 → 23 (total des objectifs ≈ 704 pour 500 visés). Recalculé à chaque génération. Rythme hebdomadaire jusqu'au 31/12.
   - « Primes pour être 1er de ma zone » : prime encaissée TTC du 1er de la zone − sa prime encaissée + 1 $ ; avance sur le 2e s'il est déjà 1er.
-- Le bandeau affiche aussi le nombre de référencements de la campagne sur l'objectif.
+  - « Ma zone » : primes encaissées de la zone, affaires encaissées / référencées, rang de la zone sur 4, nombre de CBO.
+- L'objectif global (500 référencements, volume réalisé de la campagne) n'apparaît nulle part dans la page publique : réservé aux administrateurs (outil de suivi, vue équipe). Les objectifs et statistiques de zone sont dans les données chiffrées de chaque CBO.
 - Section « Documents de la campagne » : PDF publiés comme fichiers de l'artefact (dossier docs/) : livret, fiche de référencement, kit d'argumentaire FR, flyers REF 2026 (7 produits), présentations Group Life et Santé VITASUR. Les publications quotidiennes sans `files` conservent ces PDF ; pour remplacer un document, republier avec `files` sur le même chemin.
-- Données ajoutées par le générateur : `objectif` {refs, nRefs, nCbo, part, primes}.

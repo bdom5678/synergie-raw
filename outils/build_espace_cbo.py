@@ -15,7 +15,7 @@ Usage :
   --codes-doc codes.json : document à écrire dans la base de l'outil (collection codes, doc cbo), lu par l'onglet CBO participants
   --db : dossier contenant referrals/*.json, cbos/*.json, config/settings.json
 """
-import argparse, base64, csv, datetime, glob, hashlib, hmac, json, os, secrets, sys
+import argparse, base64, csv, datetime, glob, hashlib, hmac, json, math, os, secrets, sys
 from zoneinfo import ZoneInfo
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
@@ -144,6 +144,29 @@ def main():
         for i, s in enumerate(lst):
             s['rang'] = i + 1
 
+    # Statistiques de zone (montrées au CBO connecté uniquement)
+    zstat = {}
+    for z in ZONES:
+        zr = [r for s in stats.values() if s['zone'] == z for r in s['refs']]
+        zstat[z] = {'ca': round(sum(cash(r) for r in zr), 2), 'nRef': len(zr),
+                    'nEnc': sum(1 for r in zr if r.get('statut') == 'Encaissé'),
+                    'nCbo': sum(1 for s in stats.values() if s['zone'] == z and not s['retire'])}
+    for i, z in enumerate(sorted(ZONES, key=lambda z: -zstat[z]['ca'])):
+        zstat[z]['rang'] = i + 1
+
+    # Objectif individuel de référencements (l'objectif global reste réservé aux administrateurs).
+    # Reste à faire R = objectifRefs - référencements enregistrés, réparti selon un poids 2 + racine(réalisés) :
+    # plus un CBO a déjà référé, plus son objectif additionnel est élevé. Le coefficient est calibré en supposant
+    # que la moitié des CBO ayant déjà référé au moins une affaire n'atteindra pas son objectif.
+    obj_refs = int(num(settings.get('objectifRefs')) or 500)
+    actifs = [s for s in stats.values() if not s['retire'] and s['zone'] in ZONES]
+    reste = max(0, obj_refs - len(refs))
+    poids = lambda s: 2 + math.sqrt(len(s['refs']))
+    den = sum(poids(s) for s in actifs if not s['refs']) + 0.5 * sum(poids(s) for s in actifs if s['refs'])
+    k_obj = reste / den if den else 0
+    for s in actifs:
+        s['obj'] = len(s['refs']) + math.ceil(k_obj * poids(s))
+
     public_cbos, payloads, code_rows = [], {}, []
     for cid, s in sorted(stats.items(), key=lambda kv: (kv[1]['zone'], kv[1]['nom'])):
         if s['retire'] or s['zone'] not in ZONES:
@@ -161,6 +184,7 @@ def main():
                         'dc': r.get('dateCotation') or ''})
         payload = {'id': cid, 'nom': s['nom'], 'agence': c.get('agence') or '', 'zone': s['zone'],
                    'ca': round(s['ca'], 2), 'place': s.get('place'), 'rang': s.get('rang'), 'eligible': s['eligible'],
+                   'obj': s.get('obj'), 'zoneStats': zstat[s['zone']], 'nZones': len(ZONES),
                    'affaires': aff}
         code = code_for(a.secret, cid)
         payloads[cid] = encrypt(code, cid, payload)
@@ -169,12 +193,7 @@ def main():
                           'email': c.get('email') or '', 'code': code})
 
     now = datetime.datetime.now(ZoneInfo('Africa/Kinshasa'))
-    obj_refs = int(num(settings.get('objectifRefs')) or 500)
-    n_actifs = len(public_cbos)
     data = {
-        'objectif': {'refs': obj_refs, 'nRefs': len(refs), 'nCbo': n_actifs,
-                     'part': -(-obj_refs // max(1, n_actifs)),
-                     'primes': num(settings.get('objectifPrimes')) or 800000},
         'maj': now.strftime('%d/%m/%Y à %H:%M'),
         'fin': settings.get('fin') or '2026-12-31',
         'debut': settings.get('debut') or '2026-10-19',

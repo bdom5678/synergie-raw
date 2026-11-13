@@ -98,9 +98,10 @@ button{font:600 15px var(--f-display);border:0;border-radius:9px;padding:11px 18
 .bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:8px}
 .bar i{display:block;height:100%;background:var(--gold);border-radius:99px}
 .bar.c i{background:var(--blue)}
-.hstat{display:flex;gap:14px;align-items:baseline;margin-top:8px}
-.hstat b{font:700 26px/1 var(--f-display);color:#fff;font-variant-numeric:tabular-nums}
-.hstat span{font-size:13px;color:#D7DEEF;max-width:22ch}
+.zrow{display:grid;gap:10px;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:6px}
+.zrow .v{font-size:22px}
+.zrow small{color:var(--muted);font-size:12.5px}
+@media (max-width:520px){.zrow{grid-template-columns:1fr}}
 .full{grid-column:1/-1}
 .docs{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));margin-top:6px}
 .doc{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:11px;color:inherit;text-decoration:none;min-width:0}
@@ -119,7 +120,7 @@ footer .wrap{padding-block:0 32px;color:var(--muted);font-size:12.5px}
     <h1>Espace CBO</h1>
     <p class="lede">Suivez vos affaires, votre objectif de référencements et ce qu’il vous manque pour finir 1er de votre zone. Simulez vos gains et retrouvez tous les documents de la campagne.</p>
   </div>
-  <div><div class="countdown"><b id="jours">—</b><span id="jours-lbl">jours avant la clôture de la campagne</span></div><div class="hstat"><b id="h-refs">—</b><span id="h-refs-lbl">référencements sur l’objectif de 500</span></div></div>
+  <div class="countdown"><b id="jours">—</b><span id="jours-lbl">jours avant la clôture de la campagne</span></div>
 </div></header>
 
 <main><div class="wrap">
@@ -235,22 +236,26 @@ function renderMine(){const a=me.affaires;
 
 function goalBlock(nMine){
   const jours=Math.max(0,Math.ceil((new Date(D.fin+'T23:59:59+01:00')-Date.now())/864e5)),sem=Math.max(1,Math.ceil(jours/7));
-  const part=O.part,reste=Math.max(0,part-nMine),manque=Math.max(0,O.refs-O.nRefs);
-  const pc=v=>Math.min(100,Math.round(v*100));
+  const obj=me.obj||nMine,reste=Math.max(0,obj-nMine),pc=v=>Math.min(100,Math.round(v*100));
   const refTxt=reste>0
-    ?`Pour atteindre ${nf.format(O.refs)} référencements, chaque CBO doit en apporter ${part}. Vous en avez ${nMine} : il vous en reste <b>${reste}</b>, soit environ <b>${Math.ceil(reste/sem)} par semaine</b> d’ici le ${dfr(D.fin)}.`
-    :`Vous avez atteint votre part (${nMine} sur ${part}). Continuez : il manque encore ${nf.format(manque)} référencements à la campagne.`;
+    ?`Votre objectif d’ici le ${dfr(D.fin)} : <b>${obj} référencements</b>. Vous en avez ${nMine} : il vous en reste <b>${reste}</b>, soit environ <b>${Math.ceil(reste/sem)} par semaine</b>.`
+    :`Objectif atteint (${nMine} sur ${obj}). Chaque référencement supplémentaire renforce votre place et celle de votre zone.`;
   const zi=D.zones[me.zone],pod=zi.podium||[];
   const lead=me.place===1?pod[1]:pod[0];
   let pv,pt;
   if(me.place===1){pv=lead!=null?'+'+usd(me.ca-lead):'1er';pt=lead!=null?`Vous êtes 1er de la zone ${esc(me.zone)}, avec ${usd(me.ca-lead)} d’avance sur le 2e. Gardez le rythme pour conserver la tête.`:`Vous êtes le seul CBO classé de la zone ${esc(me.zone)}. Gardez le rythme pour conserver la tête.`}
   else if(lead==null){pv='1 affaire';pt=`Aucun CBO n’est encore classé dans la zone ${esc(me.zone)} : votre première affaire encaissée vous place 1er.`}
   else{const gap=Math.max(0,lead-me.ca)+1;pv=usd(gap);pt=`Le 1er de la zone ${esc(me.zone)} totalise ${usd(lead)} de primes encaissées. Il vous faut environ <b>${usd(gap)}</b> de primes encaissées en plus pour passer devant.`}
+  const zs=me.zoneStats,zone=zs?`<div class="gcard full"><div class="k">Ma zone ${esc(me.zone)}</div>
+      <div class="zrow"><div><div class="v">${usd(zs.ca)}</div><small>de primes encaissées</small></div>
+      <div><div class="v">${zs.nEnc}</div><small>affaires encaissées sur ${zs.nRef} référencées</small></div>
+      <div><div class="v">${zs.rang===1?'1re':zs.rang+'e'}</div><small>zone sur ${me.nZones||4} en primes encaissées</small></div></div>
+      <p>Votre part : ${usd(me.ca)} de primes encaissées et ${nMine} affaire${nMine>1?'s':''} référencée${nMine>1?'s':''}, avec ${zs.nCbo} CBO dans la zone.</p></div>`:'';
   return `<div class="goal">
-    <div class="gcard${reste>0?' hot':''}"><div class="k">Référencements à réaliser</div><div class="v">${reste>0?reste:'Objectif atteint'}</div>
-      <div class="bar" role="img" aria-label="${nMine} sur ${part}"><i style="width:${pc(nMine/part)}%"></i></div><p>${refTxt}</p>
-      <div class="bar c" role="img" aria-label="Campagne : ${O.nRefs} sur ${O.refs}"><i style="width:${pc(O.nRefs/O.refs)}%"></i></div><p style="color:var(--muted);font-size:12.5px">Campagne : ${nf.format(O.nRefs)} référencements sur ${nf.format(O.refs)}.</p></div>
+    <div class="gcard${reste>0?' hot':''}"><div class="k">Mon objectif de référencements</div><div class="v">${reste>0?'Encore '+reste:'Objectif atteint'}</div>
+      <div class="bar" role="img" aria-label="${nMine} sur ${obj}"><i style="width:${pc(nMine/obj)}%"></i></div><p>${refTxt}</p></div>
     <div class="gcard${me.place===1?'':' hot'}"><div class="k">Primes pour être 1er de ma zone</div><div class="v">${pv}</div><p>${pt}</p></div>
+    ${zone}
   </div>`}
 
 /* simulateur */
@@ -304,8 +309,6 @@ const DOCS=[
   {f:'docs/Presentation_Group_Life.pdf',t:'Présentation Group Life',d:'Fiche client : capital décès et invalidité calculé sur le salaire, exemple chiffré.'},
   {f:'docs/Presentation_Sante_VITASUR.pdf',t:'Présentation Santé VITASUR',d:'Fiche client : couverture santé du personnel, formules et exemple chiffré.'}];
 $('docs').innerHTML=DOCS.map(x=>`<a class="doc" href="${x.f}" target="_blank" rel="noopener"><span class="ic">PDF</span><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small></span></a>`).join('');
-const O=D.objectif||{refs:500,nRefs:0,nCbo:1,part:7};
-$('h-refs').textContent=nf.format(O.nRefs);$('h-refs-lbl').textContent=`référencements sur l’objectif de ${nf.format(O.refs)}`;
 fillZones();
 const z0=store.get('cbo-zone');if(z0&&ZONES.includes(z0))$('sel-zone').value=z0;
 fillCbos();
