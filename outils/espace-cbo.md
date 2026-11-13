@@ -18,3 +18,7 @@ Page publique pour les CBO sans compte Claude : https://claude.ai/artifact/MGsf4
 - Générateur : claude/espace-cbo-generateur.py ; gabarit : claude/espace-cbo-gabarit.html (aussi dans outils/ du dépôt, branche main).
 - Commande : python3 build_espace_cbo.py --db <dossier avec referrals/, cbos/, config/settings.json> --template espace_cbo_template.html --secret "<secret>" --out page.html [--codes codes.csv], puis Artifact publish avec url ci-dessus.
 - Actualisation automatique (13/11/2026) : étape 5 de la tâche planifiée « Vue équipe Synergie » (jours ouvrés, 6 h 55 Kinshasa) ; elle régénère la page et la republie sur la même URL. Le secret des codes est dans cette tâche.
+
+## Codes dans l'outil de suivi (13/11/2026)
+- Onglet « CBO participants » : chaque CBO actif affiche « Code Espace CBO : XXXXXX » (tableau et fiche), visible des seuls administrateurs de l'outil. Document de base codes/cbo, règle d'accès read/write admin (vérifié : invisible au niveau « interact »).
+- Nouveau CBO ajouté dans l'outil : la fiche indique « attribué à la prochaine mise à jour » ; à l'étape 5 de la tâche « Vue équipe Synergie » (jours ouvrés 6 h 55), le générateur (option --codes-doc) calcule son code, l'inscrit dans codes/cbo et l'ajoute à l'Espace CBO dans la même exécution. Les codes existants ne changent pas.
