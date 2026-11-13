@@ -186,25 +186,23 @@ const pillOf=st=>({'Encaissé':'p-enc','Coté':'p-cot','Référencé':'p-ref','P
 const dfr=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'';
 function placeTxt(p){return p===1?'1re place':p+'e place'}
 function renderMine(){const a=me.affaires;
-  const acq=a.filter(x=>x.st==='Encaissé').reduce((s,x)=>s+commNet(x.p,x.nn),0);
-  const enc=a.filter(x=>x.st==='Coté').reduce((s,x)=>s+commNet(x.p,x.ne),0);
   const nE=a.filter(x=>x.st==='Encaissé').length,nC=a.filter(x=>x.st==='Coté').length;
   const zi=D.zones[me.zone],bonus=me.place&&D.recompenses?(D.tiers[zi.tier][me.place-1]||0):0;
   const placeTile=me.place?`<div class="tile hl"><div class="k">Place dans la zone ${esc(me.zone)}</div><div class="v">${placeTxt(me.place)}</div><div class="n">${D.recompenses?'Bonus visé : '+usd(bonus):'Sur '+zi.nEligibles+' CBO classés'}</div></div>`
     :`<div class="tile"><div class="k">Place dans la zone ${esc(me.zone)}</div><div class="v">${me.eligible?'Hors podium':'Non classé'}</div><div class="n">${me.eligible?'Rang '+me.rang+' · voir le simulateur':'Il faut au moins une affaire encaissée'}</div></div>`;
   $('mine').innerHTML=`<div class="who"><div><b>${esc(me.nom)}</b><br><small>${esc(me.agence)} · zone ${esc(me.zone)}</small></div><button type="button" class="btn-ghost" id="btn-close">Changer de CBO</button></div>
    <div class="tiles">
-     <div class="tile"><div class="k">Commission acquise</div><div class="v">${usd(acq)}</div><div class="n">${nE} affaire${nE>1?'s':''} encaissée${nE>1?'s':''}</div></div>
-     <div class="tile"><div class="k">Commission en jeu</div><div class="v">${usd(enc)}</div><div class="n">${nC} offre${nC>1?'s':''} en attente de paiement</div></div>
-     <div class="tile"><div class="k">Affaires référencées</div><div class="v">${a.length}</div><div class="n">Encaissé : ${usd(me.ca)} (prime totale)</div></div>
+     <div class="tile"><div class="k">Affaires référencées</div><div class="v">${a.length}</div><div class="n">depuis le début de la campagne</div></div>
+     <div class="tile"><div class="k">Affaires encaissées</div><div class="v">${nE}</div><div class="n">${usd(me.ca)} de primes encaissées</div></div>
+     <div class="tile"><div class="k">Offres en cours</div><div class="v">${nC}</div><div class="n">${nC?'à concrétiser avec vos clients':'aucune offre en attente'}</div></div>
      ${placeTile}
    </div>
-   <div class="deals">${a.length?a.map(x=>{const c=x.st==='Encaissé'?commNet(x.p,x.nn):x.st==='Coté'?commNet(x.p,x.ne):null;
-     const amt=x.st==='Encaissé'?`Encaissé ${usd(x.tn||x.nn)}`:x.st==='Coté'&&(x.te||x.ne)?`Offre ${usd(x.te||x.ne)}`:x.st==='Perdu'?'Affaire perdue':'Offre en préparation';
+   <div class="deals">${a.length?a.map(x=>{const v=x.st==='Encaissé'?(x.tn||x.nn):x.st==='Coté'?(x.te||x.ne):0;
+     const lbl=x.st==='Encaissé'?'prime encaissée':x.st==='Coté'?(v?'offre envoyée':'offre envoyée'):x.st==='Perdu'?'affaire perdue':'offre en préparation';
      return `<div class="deal"><div><div class="cl">${esc(x.cl)}</div><div class="meta">${esc(P[x.p]?.label||x.p)} · ${dfr(x.d)}</div><span class="pill ${pillOf(x.st)}">${esc(x.st)}</span></div>
-       <div class="amt">${c!=null?`<b>${usd(c)}</b>${x.st==='Encaissé'?'commission':'commission possible'}`:'<b>—</b>'}<br>${amt}</div></div>`}).join('')
+       <div class="amt">${v?`<b>${usd(v)}</b>`:'<b>—</b>'}${lbl}</div></div>`}).join('')
      :'<div class="empty">Aucune affaire enregistrée à votre nom pour l’instant. Envoyez votre première fiche de référencement à ref-bancassurance@rawbank.cd.</div>'}</div>
-   <p class="note">Commission possible : calculée sur la prime nette de l’offre, acquise seulement après encaissement. Une affaire absente ou erronée ? Écrivez à ref-bancassurance@rawbank.cd.</p>`;
+   <p class="note">Chaque affaire encaissée vous rapporte une commission, versée à la clôture de la campagne. Une affaire absente ou erronée ? Écrivez à ref-bancassurance@rawbank.cd.</p>`;
   $('f-login').hidden=true;$('mine').hidden=false;$('btn-close').addEventListener('click',closeMine)}
 
 /* simulateur */
@@ -227,9 +225,7 @@ function renderSim(){store.set('cbo-sim',JSON.stringify(sim));
   let tot=0,base=0;sim.forEach((l,i)=>{const c=commNet(l.p,l.v);tot+=c;base+=l.v||0;const r=$('sr-'+i);
     if(r)r.textContent=`${String(P[l.p].taux).replace('.',',')} % ${P[l.p].epargne?'de la cotisation nette périodique':'de la prime nette HT'} → ${usd(c)}`});
   $('sim-total').textContent=usd(tot);
-  const acq=me?me.affaires.filter(x=>x.st==='Encaissé').reduce((s,x)=>s+commNet(x.p,x.nn),0):0;
-  $('sim-detail').innerHTML=`<div><span>Primes simulées</span><span>${usd(base)}</span></div>`+
-    (me?`<div><span>Commission déjà acquise</span><span>${usd(acq)}</span></div><div><span>Total possible avec la simulation</span><span>${usd(acq+tot)}</span></div>`:'');
+  $('sim-detail').innerHTML=`<div><span>Primes simulées</span><span>${usd(base)}</span></div>`;
   renderRewards(base,tot)}
 function renderRewards(base,comm){if(base===undefined){base=sim.reduce((s,l)=>s+(l.v||0),0);comm=sim.reduce((s,l)=>s+commNet(l.p,l.v),0)}
   const z=me?me.zone:$('sel-zone').value,box=$('rw-block');
@@ -245,7 +241,7 @@ function renderRewards(base,comm){if(base===undefined){base=sim.reduce((s,l)=>s+
   if(!projPlace)txt=`Saisissez un montant pour vous situer dans la zone ${esc(z)}.`;
   else{const lead=pod[0]??0,gap=Math.max(0,lead-proj)+1;
     txt=(me?`Avec ${usd(cur)} déjà encaissés et ${usd(base)} simulés, `:`Avec ${usd(base)} encaissés, `)+
-      (inPod?`vous seriez <b>${projPlace===1?'1er':projPlace+'e'} de la zone ${esc(z)}</b>${D.recompenses?` : bonus de <b>${usd(tv[projPlace-1])}</b>, soit <b>${usd(comm+(me?me.affaires.filter(x=>x.st==='Encaissé').reduce((s,x)=>s+commNet(x.p,x.nn),0):0)+tv[projPlace-1])}</b> de gains au total`:''}.`
+      (inPod?`vous seriez <b>${projPlace===1?'1er':projPlace+'e'} de la zone ${esc(z)}</b>${D.recompenses?` : bonus de <b>${usd(tv[projPlace-1])}</b>, soit <b>${usd(comm+tv[projPlace-1])}</b> de gains avec cette simulation`:''}.`
         :`vous seriez ${projPlace}e de la zone ${esc(z)}.`)+
       (projPlace!==1?` Pour passer 1er, il faudrait environ ${usd(gap)} de primes encaissées en plus.`:'')}
   box.innerHTML=`<h3 style="font:600 16px var(--f-display);margin:20px 0 0">Podium de la zone ${esc(z)}</h3>
