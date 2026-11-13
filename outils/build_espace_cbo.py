@@ -169,7 +169,12 @@ def main():
                           'email': c.get('email') or '', 'code': code})
 
     now = datetime.datetime.now(ZoneInfo('Africa/Kinshasa'))
+    obj_refs = int(num(settings.get('objectifRefs')) or 500)
+    n_actifs = len(public_cbos)
     data = {
+        'objectif': {'refs': obj_refs, 'nRefs': len(refs), 'nCbo': n_actifs,
+                     'part': -(-obj_refs // max(1, n_actifs)),
+                     'primes': num(settings.get('objectifPrimes')) or 800000},
         'maj': now.strftime('%d/%m/%Y à %H:%M'),
         'fin': settings.get('fin') or '2026-12-31',
         'debut': settings.get('debut') or '2026-10-19',

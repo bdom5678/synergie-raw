@@ -22,3 +22,11 @@ Page publique pour les CBO sans compte Claude : https://claude.ai/artifact/MGsf4
 ## Codes dans l'outil de suivi (13/11/2026)
 - Onglet « CBO participants » : chaque CBO actif affiche « Code Espace CBO : XXXXXX » (tableau et fiche), visible des seuls administrateurs de l'outil. Document de base codes/cbo, règle d'accès read/write admin (vérifié : invisible au niveau « interact »).
 - Nouveau CBO ajouté dans l'outil : la fiche indique « attribué à la prochaine mise à jour » ; à l'étape 5 de la tâche « Vue équipe Synergie » (jours ouvrés 6 h 55), le générateur (option --codes-doc) calcule son code, l'inscrit dans codes/cbo et l'ajoute à l'Espace CBO dans la même exécution. Les codes existants ne changent pas.
+
+## Objectifs et documents (13/11/2026)
+- Après connexion, le CBO voit deux encadrés :
+  - « Référencements à réaliser » : part individuelle = arrondi supérieur de objectifRefs (500) / nombre de CBO actifs (7 pour 77 CBO), moins ses référencements ; rythme hebdomadaire jusqu'au 31/12 ; progression de la campagne (référencements enregistrés / 500).
+  - « Primes pour être 1er de ma zone » : prime encaissée TTC du 1er de la zone − sa prime encaissée + 1 $ ; avance sur le 2e s'il est déjà 1er.
+- Le bandeau affiche aussi le nombre de référencements de la campagne sur l'objectif.
+- Section « Documents de la campagne » : PDF publiés comme fichiers de l'artefact (dossier docs/) : livret, fiche de référencement, kit d'argumentaire FR, flyers REF 2026 (7 produits), présentations Group Life et Santé VITASUR. Les publications quotidiennes sans `files` conservent ces PDF ; pour remplacer un document, republier avec `files` sur le même chemin.
+- Données ajoutées par le générateur : `objectif` {refs, nRefs, nCbo, part, primes}.
