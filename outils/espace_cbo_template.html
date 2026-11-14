@@ -104,12 +104,21 @@ button{font:600 15px var(--f-display);border:0;border-radius:9px;padding:11px 18
 @media (max-width:520px){.zrow{grid-template-columns:1fr}}
 .full{grid-column:1/-1}
 .docs{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));margin-top:6px}
-.doc{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:11px;color:inherit;text-decoration:none;min-width:0}
+.doc{font:inherit;text-align:left;background:var(--surface);cursor:pointer;width:100%;display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:11px;color:inherit;text-decoration:none;min-width:0}
 .doc:hover{border-color:var(--gold)}
 .doc:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .doc .ic{flex:0 0 38px;height:46px;border-radius:6px;background:var(--navy);color:var(--gold);font:700 11px var(--f-display);display:grid;place-items:center}
 .doc b{display:block;font:600 15px/1.3 var(--f-display)}
 .doc small{color:var(--muted);font-size:12.5px}
+.viewer{position:fixed;inset:0;z-index:50;background:rgba(10,14,28,.72);display:flex;align-items:stretch;justify-content:center;padding:max(10px,env(safe-area-inset-top,0px)) 10px 10px}
+.viewer[hidden]{display:none}
+.vbox{background:var(--surface);border-radius:14px;width:min(920px,100%);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.vhead{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.vhead b{font:600 16px var(--f-display);flex:1 1 180px;min-width:0}
+.vhead button{min-height:40px;padding:8px 14px;font-size:14px}
+.vbody{overflow:auto;padding:12px;background:var(--soft);flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+.vbody canvas{display:block;width:100%;height:auto;margin:0 auto 12px;background:#fff;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.vmsg{padding:24px;text-align:center;color:var(--muted)}
 footer .wrap{padding-block:0 32px;color:var(--muted);font-size:12.5px}
 @media (prefers-reduced-motion:no-preference){.result .big{transition:color .2s}}
 </style>
@@ -164,6 +173,10 @@ footer .wrap{padding-block:0 32px;color:var(--muted);font-size:12.5px}
     <div class="docs" id="docs"></div>
   </section>
 </div></main>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="v-title"><div class="vbox">
+  <div class="vhead"><b id="v-title"></b><button type="button" class="btn" id="v-dl" hidden>Télécharger</button><button type="button" class="btn-ghost" id="v-close">Fermer</button></div>
+  <div class="vbody" id="v-body"></div>
+</div></div>
 <footer><div class="wrap" id="foot"></div></footer>
 
 <script>
@@ -308,7 +321,32 @@ const DOCS=[
   {f:'docs/Flyers_REF2026_Synergie_Corporate.pdf',t:'Flyers produits REF 2026',d:'Multirisque, TRC, Flotte, Transport, Corps, Group Life, CAREC. 7 pages, à montrer au client.'},
   {f:'docs/Presentation_Group_Life.pdf',t:'Présentation Group Life',d:'Fiche client : capital décès et invalidité calculé sur le salaire, exemple chiffré.'},
   {f:'docs/Presentation_Sante_VITASUR.pdf',t:'Présentation Santé VITASUR',d:'Fiche client : couverture santé du personnel, formules et exemple chiffré.'}];
-$('docs').innerHTML=DOCS.map(x=>`<a class="doc" href="${x.f}" target="_blank" rel="noopener"><span class="ic">PDF</span><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small></span></a>`).join('');
+$('docs').innerHTML=DOCS.map((x,i)=>`<button type="button" class="doc" data-doc="${i}"><span class="ic">PDF</span><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small></span></button>`).join('');
+/* Lecteur PDF intégré : la page est affichée dans un cadre protégé où les liens vers des fichiers ne s'ouvrent pas.
+   Les PDF sont lus avec pdf.js (lib/, publié avec la page) et téléchargés via la capacité downloads. */
+let pdfLib=null,dlApi,curDoc=null,curBlob=null,vToken=0;
+const loadScript=src=>new Promise((ok,ko)=>{const t=document.createElement('script');t.src=src;t.onload=ok;t.onerror=ko;document.head.appendChild(t)});
+async function getPdfLib(){if(pdfLib)return pdfLib;await loadScript('lib/pdf.min.js');pdfLib=window.pdfjsLib;pdfLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js';return pdfLib}
+async function getDl(){if(dlApi!==undefined)return dlApi;try{dlApi=window.claude&&claude.use?await claude.use('downloads'):null}catch(e){dlApi=null}return dlApi}
+async function openDoc(i){const x=DOCS[i],tok=++vToken;curDoc=x;curBlob=null;
+  $('v-title').textContent=x.t;$('v-dl').hidden=true;$('v-body').innerHTML='<div class="vmsg">Chargement du document…</div>';
+  $('viewer').hidden=false;document.body.style.overflow='hidden';$('v-close').focus();
+  try{const r=await fetch(x.f);if(!r.ok)throw new Error('http '+r.status);const buf=await r.arrayBuffer();if(tok!==vToken)return;
+    curBlob=new Blob([buf],{type:'application/pdf'});
+    getDl().then(d=>{if(d&&tok===vToken)$('v-dl').hidden=false});
+    const lib=await getPdfLib(),pdf=await lib.getDocument({data:new Uint8Array(buf.slice(0))}).promise;if(tok!==vToken)return;
+    $('v-body').innerHTML='';const W=Math.min($('v-body').clientWidth-24,900),dpr=Math.min(2,window.devicePixelRatio||1);
+    for(let n=1;n<=pdf.numPages;n++){if(tok!==vToken)return;const pg=await pdf.getPage(n),v1=pg.getViewport({scale:1}),vp=pg.getViewport({scale:W/v1.width*dpr});
+      const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;c.style.maxWidth=W+'px';c.setAttribute('aria-label',`${x.t}, page ${n} sur ${pdf.numPages}`);
+      $('v-body').appendChild(c);await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}}
+  catch(err){if(tok!==vToken)return;$('v-body').innerHTML='<div class="vmsg">Le document n’a pas pu être affiché ici. Demandez-le à ref-bancassurance@rawbank.cd.</div>'}}
+function closeDoc(){vToken++;$('viewer').hidden=true;$('v-body').innerHTML='';document.body.style.overflow=''}
+$('docs').addEventListener('click',e=>{const b=e.target.closest('[data-doc]');if(b)openDoc(+b.dataset.doc)});
+$('v-close').addEventListener('click',closeDoc);
+$('viewer').addEventListener('click',e=>{if(e.target.id==='viewer')closeDoc()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('viewer').hidden)closeDoc()});
+$('v-dl').addEventListener('click',async()=>{const d=await getDl();if(!d||!curBlob)return;const b=$('v-dl');
+  try{await d.save({filename:curDoc.f.split('/').pop(),data:curBlob})}catch(e){if(e&&e.code&&e.code!=='declined'&&e.code!=='rate_limited')b.hidden=true}});
 fillZones();
 const z0=store.get('cbo-zone');if(z0&&ZONES.includes(z0))$('sel-zone').value=z0;
 fillCbos();
