@@ -64,6 +64,12 @@ class MainActivity : Activity() {
         defilement = ScrollView(this).apply { addView(fil) }
         racine.addView(defilement, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
 
+        racine.addView(rangee(
+            bouton("📖 Verset") { versetDuJour() },
+            bouton("➕ Rappel") { nouveauRappel() },
+            bouton("📋 Rappels") { listeRappels() },
+        ))
+
         val saisie = EditText(this).apply { hint = "Parlez à Sophonie…"; maxLines = 4 }
         racine.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -78,8 +84,10 @@ class MainActivity : Activity() {
 
         Memoire.de(this).historique(10).forEach { (role, texte) -> bulle(if (role == "user") "Vous" else "Sophonie", texte) }
         if (!reglages.configure) {
-            blocReglages.visibility = View.VISIBLE
-            bulle("Sophonie", "Bienvenue ! Collez votre clé API Claude, indiquez votre prénom, touchez « Enregistrer », puis « Autorisations ».")
+            bulle("Sophonie", "Bienvenue ! Je fonctionne en mode sans clé : prière du matin à 7h00 et du soir à 23h00 " +
+                "avec un verset du jour, rappel du coucher à 23h30, et vos rappels (bouton ➕ Rappel).\n\n" +
+                "Pour que je comprenne vos messages et vous réponde, ajoutez une clé API Claude dans ⚙️. " +
+                "Touchez aussi ⚙️ > « Autorisations », « Batterie » et « Alarmes » pour que je vous prévienne à l'heure.")
         } else if (fil.childCount == 0) {
             bulle("Sophonie", "Bonjour ! Je suis là. Que puis-je faire pour vous ?")
         }
@@ -126,7 +134,11 @@ class MainActivity : Activity() {
 
     private fun discuter(texte: String) {
         if (!reglages.configure) {
-            bulle("Sophonie", "Il me faut d'abord votre clé API Claude (⚙️)."); return
+            bulle("Vous", texte)
+            bulle("Sophonie", "En mode sans clé, je ne peux pas comprendre les messages écrits. Utilisez les boutons " +
+                "📖 Verset, ➕ Rappel et 📋 Rappels. Pour discuter avec moi, ajoutez une clé API Claude dans ⚙️, " +
+                "ou parlez-moi dans l'application Claude (projet « Sophonie »).")
+            return
         }
         bulle("Vous", texte)
         val attente = bulle("Sophonie", "…")
@@ -142,6 +154,64 @@ class MainActivity : Activity() {
                 if (reglages.voix) tts?.speak(reponse.replace(Regex("[*#_`]"), ""), TextToSpeech.QUEUE_FLUSH, null, "rep")
             }
         }
+    }
+
+    private fun versetDuJour() {
+        val matin = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) < 16
+        bulle("Sophonie", Versets.message(matin))
+    }
+
+    /** Rappel manuel : texte, puis date, puis heure. Fonctionne sans clé ni internet. */
+    private fun nouveauRappel() {
+        val champ = EditText(this).apply { hint = "Ex. : Appeler Maman" }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Nouveau rappel")
+            .setView(champ)
+            .setPositiveButton("Choisir la date") { _, _ ->
+                val texte = champ.text.toString().trim()
+                if (texte.isEmpty()) return@setPositiveButton
+                val c = java.util.Calendar.getInstance()
+                android.app.DatePickerDialog(this, { _, annee, mois, jour ->
+                    android.app.TimePickerDialog(this, { _, heure, minute ->
+                        val quand = java.util.Calendar.getInstance().apply {
+                            set(annee, mois, jour, heure, minute, 0); set(java.util.Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        if (quand <= System.currentTimeMillis()) {
+                            Toast.makeText(this, "Cette heure est déjà passée", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val id = Memoire.de(this).ajouterRappel(texte, quand, "")
+                            Rythme.programmerRappel(this, id, quand)
+                            bulle("Sophonie", "C'est noté : « $texte », ${Temps.lisible(quand)}. Je vous préviendrai.")
+                        }
+                    }, c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE), true).show()
+                }, c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH),
+                    c.get(java.util.Calendar.DAY_OF_MONTH)).show()
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
+    }
+
+    private fun listeRappels() {
+        val rappels = Memoire.de(this).rappelsActifs()
+        if (rappels.isEmpty()) {
+            bulle("Sophonie", "Aucun rappel à venir. Touchez ➕ Rappel pour en ajouter un."); return
+        }
+        val libelles = rappels.map { "${it.getString("quand")} · ${it.getString("texte")}" }.toTypedArray()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Rappels à venir (toucher pour annuler)")
+            .setItems(libelles) { _, i ->
+                val r = rappels[i]
+                android.app.AlertDialog.Builder(this)
+                    .setMessage("Annuler « ${r.getString("texte")} » ?")
+                    .setPositiveButton("Oui") { _, _ ->
+                        Memoire.de(this).terminerRappel(r.getLong("id"))
+                        bulle("Sophonie", "Rappel annulé : « ${r.getString("texte")} ».")
+                    }
+                    .setNegativeButton("Non", null)
+                    .show()
+            }
+            .setNegativeButton("Fermer", null)
+            .show()
     }
 
     private fun ecouter() {

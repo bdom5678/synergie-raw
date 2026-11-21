@@ -106,6 +106,10 @@ class MomentRecepteur : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val m = Moment.valueOf(intent.getStringExtra("moment") ?: return)
         Rythme.programmerMoment(context, m)
+        if (!Reglages(context).configure) {
+            HorsLigne.moment(context, m)
+            return
+        }
         if (m.consigne == null) {
             Rythme.notifier(context, 100 + m.ordinal, m.titre, "Posez le téléphone, Sophonie veille sur demain.", false)
             return
@@ -156,5 +160,42 @@ class RappelRecepteur : BroadcastReceiver() {
 class DemarrageRecepteur : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) Rythme.reprogrammerTout(context)
+    }
+}
+
+/** Mode sans clé : prières avec versets intégrés et rappels, sans internet ni intelligence artificielle. */
+object HorsLigne {
+    private fun rappelsDuJour(context: Context, decalageJours: Int): String {
+        val debut = java.time.LocalDate.now().plusDays(decalageJours.toLong())
+            .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val fin = debut + 86_400_000L
+        val liste = Memoire.de(context).rappelsActifs()
+            .filter { it.getLong("echeance") in maxOf(debut, System.currentTimeMillis()) until fin }
+            .map { "• " + java.text.SimpleDateFormat("HH:mm", java.util.Locale.FRENCH)
+                .format(java.util.Date(it.getLong("echeance"))) + " " + it.getString("texte") }
+        return if (liste.isEmpty()) "" else liste.joinToString("\n")
+    }
+
+    fun moment(context: Context, m: Moment) {
+        val (titre, corps) = when (m) {
+            Moment.REVEIL -> {
+                val r = rappelsDuJour(context, 0)
+                "☀️ Bonjour · Prière du matin" to Versets.message(true) +
+                    (if (r.isNotEmpty()) "\n\n⏰ Aujourd'hui :\n$r" else "")
+            }
+            Moment.MIDI -> {
+                val r = rappelsDuJour(context, 0)
+                "🕛 Pause de midi" to "Prenez un moment pour déjeuner, boire de l'eau et souffler." +
+                    (if (r.isNotEmpty()) "\n\n⏰ Cet après-midi :\n$r" else "")
+            }
+            Moment.SOIR -> {
+                val r = rappelsDuJour(context, 1)
+                "🙏 Prière du soir" to Versets.message(false) +
+                    (if (r.isNotEmpty()) "\n\n📅 Demain :\n$r" else "")
+            }
+            Moment.DORMIR -> "🌙 Il est l'heure de dormir" to "Posez le téléphone. Demain, réveil à 7h00."
+        }
+        Memoire.de(context).ajouterEchange("assistant", "$titre\n$corps")
+        Rythme.notifier(context, 100 + m.ordinal, titre, corps, m != Moment.MIDI)
     }
 }

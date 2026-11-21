@@ -19,6 +19,15 @@ Sophonie est un agent IA (Claude) qui vit dans votre téléphone Android. Elle v
 
 Pour mettre à jour, téléchargez la nouvelle version et installez-la par-dessus : vos données sont conservées.
 
+## Sans clé API
+
+L'application fonctionne aussi **sans clé**, en mode simple et hors ligne :
+- prière du matin (7h00) et du soir (23h00), avec un verset du jour (Louis Segond 1910) et une prière ;
+- rappels que vous programmez vous-même (bouton ➕ Rappel) et liste des rappels (📋) ;
+- pause de midi et rappel du coucher (23h30).
+
+Pour discuter avec Sophonie sans clé, utilisez l'application Claude avec votre abonnement : créez un projet « Sophonie » avec les instructions de [`projet-claude.md`](projet-claude.md).
+
 ## Ce que Sophonie fait
 
 | Domaine | Capacités |
