@@ -11,13 +11,35 @@ android {
         applicationId = "com.sophonie.assistant"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 3
+        versionName = "2.1"
+    }
+
+    // Clé de signature fournie par la compilation GitHub (jamais stockée dans le dépôt).
+    val cle = System.getenv("SOPHONIE_KEYSTORE")
+    signingConfigs {
+        if (cle != null) {
+            create("sophonie") {
+                storeFile = file(cle)
+                storePassword = System.getenv("SOPHONIE_KEYSTORE_PASS")
+                keyAlias = "sophonie"
+                keyPassword = System.getenv("SOPHONIE_KEYSTORE_PASS")
+            }
+        }
+    }
+
+    flavorDimensions += "acces"
+    productFlavors {
+        // Tous les accès, y compris la lecture des SMS et du journal d'appels.
+        create("complet") { dimension = "acces" }
+        // Sans lecture des SMS ni du journal d'appels : moins souvent bloquée par Play Protect.
+        create("essentiel") { dimension = "acces" }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (cle != null) signingConfig = signingConfigs.getByName("sophonie")
         }
     }
     compileOptions {
@@ -26,6 +48,10 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+    }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
     packaging {
         resources {

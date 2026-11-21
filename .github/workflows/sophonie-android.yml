@@ -30,35 +30,48 @@ jobs:
       - name: Clé de signature persistante
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: sophonie-debug-keystore-v1
+          path: ~/.sophonie/sophonie.jks
+          key: sophonie-release-keystore-v1
 
       - name: Créer la clé si absente
+        env:
+          SOPHONIE_KEYSTORE_PASS: sophonie-cle-locale
         run: |
-          if [ ! -f ~/.android/debug.keystore ]; then
-            mkdir -p ~/.android
-            keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey \
-              -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          if [ ! -f ~/.sophonie/sophonie.jks ]; then
+            mkdir -p ~/.sophonie
+            keytool -genkeypair -keystore ~/.sophonie/sophonie.jks -storepass "$SOPHONIE_KEYSTORE_PASS" \
+              -alias sophonie -keypass "$SOPHONIE_KEYSTORE_PASS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Sophonie,O=Sophonie,C=CM"
           fi
 
-      - name: Compiler l'APK
-        run: gradle -p sophonie/android assembleDebug --no-daemon --stacktrace
+      - name: Compiler les APK
+        env:
+          SOPHONIE_KEYSTORE_PASS: sophonie-cle-locale
+        run: |
+          export SOPHONIE_KEYSTORE=$HOME/.sophonie/sophonie.jks
+          gradle -p sophonie/android assembleCompletRelease assembleEssentielRelease --no-daemon --stacktrace
 
       - name: Renommer
-        run: cp sophonie/android/app/build/outputs/apk/debug/app-debug.apk Sophonie.apk
+        run: |
+          cp sophonie/android/app/build/outputs/apk/complet/release/app-complet-release.apk Sophonie-complet.apk
+          cp sophonie/android/app/build/outputs/apk/essentiel/release/app-essentiel-release.apk Sophonie-essentiel.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: Sophonie-apk
-          path: Sophonie.apk
+          path: Sophonie-*.apk
 
       - name: Publier la version
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: sophonie-v2.${{ github.run_number }}
+          tag_name: sophonie-v2.${{ github.run_number }}-signe
           name: Sophonie 2.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           prerelease: true
-          files: Sophonie.apk
+          files: |
+            Sophonie-essentiel.apk
+            Sophonie-complet.apk
           body: |
-            Application Android Sophonie. Sur le téléphone : téléchargez Sophonie.apk, ouvrez-le et autorisez l'installation.
+            Application Android Sophonie.
+            - Sophonie-essentiel.apk : à essayer en premier, moins souvent bloquée par Play Protect (sans lecture directe des SMS ni du journal d'appels, qui restent visibles par les notifications).
+            - Sophonie-complet.apk : tous les accès.

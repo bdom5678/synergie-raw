@@ -7,8 +7,12 @@ Sophonie est un agent IA (Claude) qui vit dans votre téléphone Android. Elle v
 ## Installer
 
 1. **Clé API Claude** : sur [console.anthropic.com](https://console.anthropic.com), créez un compte, ajoutez du crédit (Billing), puis **API Keys > Create Key**. Copiez la clé `sk-ant-…`. Cette facturation est séparée de l'abonnement Claude.
-2. **Télécharger l'application** : sur le téléphone, ouvrez [la page des versions](https://github.com/bdom5678/synergie-raw/releases) et téléchargez `Sophonie.apk` dans la version la plus récente.
-3. **Installer** : ouvrez le fichier. Android demande d'autoriser l'installation depuis le navigateur : acceptez. L'application n'est pas sur le Play Store, c'est normal.
+2. **Télécharger l'application** : sur le téléphone, ouvrez [la page des versions](https://github.com/bdom5678/synergie-raw/releases) et, dans la version la plus récente (celle dont le nom se termine par `-signe`), téléchargez :
+   - `Sophonie-essentiel.apk` : à essayer en premier. Elle est moins souvent bloquée par Play Protect, car elle ne lit pas directement les SMS ni le journal d'appels. Elle voit quand même les SMS et appels manqués par les notifications.
+   - `Sophonie-complet.apk` : tous les accès, plus souvent bloquée.
+3. **Installer** : ouvrez le fichier et autorisez l'installation depuis le navigateur. L'application n'est pas sur le Play Store, donc **Play Protect** peut afficher une alerte :
+   - « Application non sécurisée » ou « Analyser l'application ? » : touchez **Plus de détails** puis **Installer quand même** (ou **Installer sans analyser**).
+   - « Application bloquée pour protéger votre appareil », sans bouton pour continuer : ouvrez **Play Store** > votre photo de profil > **Play Protect** > ⚙️ (en haut à droite), désactivez **Analyser les applications avec Play Protect**, installez Sophonie, puis **réactivez** l'analyse. Si Play Protect signale ensuite Sophonie, choisissez **Ignorer** ou **Garder l'application**.
 4. **Configurer** : ouvrez Sophonie, collez la clé API, indiquez votre prénom et vos contacts prioritaires, puis touchez **Enregistrer**.
 5. **Donner les accès** : touchez **Autorisations** et acceptez tout (contacts, appels, SMS, agenda, micro, notifications). Activez ensuite Sophonie dans **Accès aux notifications**. Si Android affiche « Paramètre restreint », allez dans Paramètres > Applications > Sophonie > ⋮ (en haut à droite) > **Autoriser les paramètres restreints**, puis recommencez.
 6. **Rester active** : touchez **Batterie** (accepter) et **Alarmes** (autoriser). Sur Samsung, Xiaomi, Tecno, Infinix et Itel, mettez aussi Sophonie en « Sans restriction » dans les réglages de batterie : sinon le téléphone l'endort et les rappels arrivent en retard.
