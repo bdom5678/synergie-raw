@@ -16,6 +16,12 @@ SERVEUR="$DOSSIER/sophonie/serveur"
 
 [ "$(id -u)" -eq 0 ] || { echo "Lancez ce script avec sudo."; exit 1; }
 
+echo "==> Mémoire d'appoint (petites machines gratuites à 1 Go)"
+if [ "$(awk '/MemTotal/ {print $2}' /proc/meminfo)" -lt 1600000 ] && ! swapon --show | grep -q .; then
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap -q /swapfile && swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 echo "==> Paquets système"
 apt-get update -qq
 apt-get install -y -qq git python3-venv python3-pip caddy ufw curl >/dev/null

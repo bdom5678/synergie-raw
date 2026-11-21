@@ -23,6 +23,19 @@ Elle tient en deux parties :
 
 Il doit tourner en permanence et être joignable par votre téléphone en HTTPS. Un petit VPS (1 à 2 vCPU, 2 Go de RAM, Ubuntu 24.04) suffit largement : le gros du travail est fait par Claude, pas par le serveur. Un ordinateur ou un Raspberry Pi à la maison est déconseillé : à chaque coupure de courant ou d'internet, Sophonie s'arrête.
 
+### Serveur gratuit : Google Cloud e2-micro
+
+Google Cloud offre une petite machine permanente gratuite (une seule par compte). C'est le même compte que pour la clé Gmail.
+
+1. Sur [console.cloud.google.com](https://console.cloud.google.com), dans le projet `Sophonie` : **Facturation** > associez un compte de facturation. Une carte est demandée pour vérifier votre identité, mais l'offre gratuite n'est pas débitée.
+2. **Protégez-vous** : Facturation > **Budgets et alertes** > créez un budget de **1 $** avec alerte par e-mail. Vous serez prévenu à la moindre dépense.
+3. **Compute Engine** > Instances de VM > **Créer une instance** :
+   - Région : **us-central1** (Iowa), **us-east1** ou **us-west1**. Seules ces régions sont gratuites.
+   - Série **E2**, type **e2-micro**.
+   - Disque de démarrage : **Ubuntu 24.04 LTS**, type **Disque persistant standard**, **30 Go** au maximum (pas « équilibré »).
+   - Pare-feu : cochez **Autoriser le trafic HTTP** et **Autoriser le trafic HTTPS**.
+4. Une fois l'instance créée, cliquez sur **SSH** dans la liste : un terminal s'ouvre dans le navigateur. Lancez-y les deux commandes ci-dessous.
+
 ### Installation automatique sur un VPS (recommandé)
 
 Connecté en SSH au serveur :
