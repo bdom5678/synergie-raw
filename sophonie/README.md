@@ -21,7 +21,22 @@ Elle tient en deux parties :
 
 ## 1. Lancer le serveur
 
-Il doit tourner en permanence et être joignable par votre téléphone en HTTPS : un petit VPS, un Raspberry Pi derrière un tunnel (Cloudflare Tunnel, Tailscale Funnel), etc.
+Il doit tourner en permanence et être joignable par votre téléphone en HTTPS. Un petit VPS (1 à 2 vCPU, 2 Go de RAM, Ubuntu 24.04) suffit largement : le gros du travail est fait par Claude, pas par le serveur. Un ordinateur ou un Raspberry Pi à la maison est déconseillé : à chaque coupure de courant ou d'internet, Sophonie s'arrête.
+
+### Installation automatique sur un VPS (recommandé)
+
+Connecté en SSH au serveur :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bdom5678/synergie-raw/ccr-2019a868-qtmewc/sophonie/deploiement/installer.sh -o installer.sh
+sudo bash installer.sh
+```
+
+Le script installe tout : utilisateur dédié, service qui redémarre tout seul, HTTPS automatique (adresse gratuite `https://<ip>.sslip.io`, ou votre domaine : `sudo bash installer.sh mon.domaine.com`) et pare-feu. Il demande votre clé API Claude, puis affiche l'**adresse** et le **jeton** à saisir dans l'application. Pour mettre Sophonie à jour, relancez le même script.
+
+Ensuite, adaptez `/opt/sophonie/sophonie/serveur/profil.json` et faites `sudo systemctl restart sophonie`.
+
+### Installation manuelle
 
 ```bash
 cd sophonie/serveur
@@ -42,7 +57,31 @@ python -m sophonie                      # écoute sur le port 8765
 
 Générer un jeton : `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`.
 
-**Gmail et Agenda** : créez un identifiant OAuth « Application de bureau » dans Google Cloud Console (APIs Gmail et Calendar activées), enregistrez-le sous `serveur/google_client_secret.json`, puis lancez `python -m sophonie.connexion_google`.
+### Clé Google (Gmail et Agenda)
+
+À faire une seule fois, depuis un ordinateur, sur [console.cloud.google.com](https://console.cloud.google.com) :
+
+1. **Projet** : en haut, « Sélectionner un projet » > **Nouveau projet** > nom `Sophonie` > Créer.
+2. **APIs** : menu « API et services » > **Bibliothèque**. Activez **Gmail API**, puis **Google Calendar API**.
+3. **Écran de consentement** : « API et services » > **Écran de consentement OAuth** (ou « Google Auth Platform »). Type **Externe**, nom de l'application `Sophonie`, votre adresse e-mail en contact. Inutile d'ajouter des champs d'application : le script les demande lui-même.
+4. **Utilisateurs** : dans « Audience », ajoutez comme utilisateurs test toutes les adresses que Sophonie doit lire (pro et perso).
+5. **Publier** : toujours dans « Audience », cliquez sur **Publier l'application** (passer « En production »). Sans cela, Google coupe l'accès tous les 7 jours. Inutile de demander une validation à Google : pour votre usage personnel, vous verrez simplement l'avertissement « Google n'a pas validé cette application ». Cliquez sur « Paramètres avancés » puis « Accéder à Sophonie ».
+6. **Identifiant** : « API et services » > **Identifiants** > Créer des identifiants > **ID client OAuth** > type **Application de bureau** > Créer, puis **Télécharger le JSON**.
+7. **Envoyer le fichier sur le serveur** (depuis votre ordinateur) :
+   ```bash
+   scp client_secret_*.json root@ADRESSE_DU_SERVEUR:/opt/sophonie/sophonie/serveur/google_client_secret.json
+   ssh root@ADRESSE_DU_SERVEUR "chown sophonie: /opt/sophonie/sophonie/serveur/google_client_secret.json && chmod 600 /opt/sophonie/sophonie/serveur/google_client_secret.json"
+   ```
+8. **Connecter chaque compte**, un par un. Le tunnel SSH permet à votre navigateur de terminer la connexion :
+   ```bash
+   ssh -L 8085:localhost:8085 root@ADRESSE_DU_SERVEUR
+   sudo -u sophonie bash -c 'cd /opt/sophonie/sophonie/serveur && .venv/bin/python -m sophonie.connexion_google perso'
+   ```
+   Ouvrez le lien affiché, choisissez le compte, acceptez, puis recommencez avec `pro`. Terminez par `sudo systemctl restart sophonie`.
+
+Sophonie lit alors tous les comptes connectés, en lecture seule, et fusionne mails et agendas.
+
+Si votre messagerie professionnelle n'est pas sur Google (Outlook/Microsoft 365, par exemple), elle passe par les notifications Android de l'application de mail, sans connexion directe.
 
 **Webhook WhatsApp Business** : dans Meta, déclarez l'URL `https://votre-serveur/webhook/whatsapp` avec votre `WHATSAPP_VERIFY_TOKEN`, et abonnez-vous au champ `messages`.
 

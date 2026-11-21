@@ -1,34 +1,50 @@
-"""Connexion unique à Google (Gmail + Agenda, lecture seule).
+"""Connexion d'un compte Google (Gmail + Agenda, lecture seule). Une fois par compte.
 
-1. Créez un identifiant OAuth « Application de bureau » dans Google Cloud Console
-   (APIs Gmail et Google Calendar activées) et téléchargez-le sous `serveur/google_client_secret.json`.
-2. Lancez : python -m sophonie.connexion_google
-3. Autorisez l'accès dans le navigateur : le jeton est enregistré dans `serveur/google_token.json`
-   (fichier ignoré par git).
+    python -m sophonie.connexion_google perso
+    python -m sophonie.connexion_google pro
 
-Pour plusieurs comptes (pro et perso), lancez la commande une fois par compte avec
-GOOGLE_TOKEN_FILE=google_token_pro.json, etc.
+Le jeton est enregistré dans serveur/google_token_<compte>.json (ignoré par git).
+
+Sur un serveur sans écran : depuis votre ordinateur, ouvrez d'abord un tunnel
+    ssh -L 8085:localhost:8085 sophonie@ADRESSE_DU_SERVEUR
+lancez la commande dans cette session SSH, puis ouvrez dans votre navigateur le lien affiché.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
+import os
+import re
+import sys
 
-from .config import RACINE, Secrets
+from .config import RACINE
 from .integrations import SCOPES_GOOGLE
+
+PORT = 8085
 
 
 def main() -> None:
     from google_auth_oauthlib.flow import InstalledAppFlow
 
+    compte = sys.argv[1] if len(sys.argv) > 1 else "principal"
+    if not re.fullmatch(r"[a-z0-9_-]{1,30}", compte):
+        raise SystemExit("Nom de compte invalide : lettres minuscules, chiffres, - ou _ (ex. pro, perso).")
     secret = RACINE / "google_client_secret.json"
     if not secret.exists():
-        raise SystemExit(f"Fichier manquant : {secret}")
+        raise SystemExit(f"Fichier manquant : {secret}\nVoir le README, section « Clé Google ».")
+
     flow = InstalledAppFlow.from_client_secrets_file(str(secret), SCOPES_GOOGLE)
-    creds = flow.run_local_server(port=0)
-    cible = Path(Secrets.depuis_env().google_token_file)
+    avec_ecran = bool(os.environ.get("DISPLAY") or sys.platform in ("darwin", "win32"))
+    print(f"Connexion du compte « {compte} ». Choisissez le bon compte Google dans le navigateur.")
+    creds = flow.run_local_server(
+        host="localhost", port=PORT, open_browser=avec_ecran,
+        authorization_prompt_message="Ouvrez ce lien dans votre navigateur : {url}",
+        success_message="C'est fait : Sophonie peut lire ce compte. Vous pouvez fermer cette page.",
+        access_type="offline", prompt="consent",
+    )
+    cible = RACINE / ("google_token.json" if compte == "principal" else f"google_token_{compte}.json")
     cible.write_text(creds.to_json(), encoding="utf-8")
-    print(f"Google connecté. Jeton enregistré dans {cible}")
+    os.chmod(cible, 0o600)
+    print(f"Compte « {compte} » connecté. Redémarrez Sophonie : sudo systemctl restart sophonie")
 
 
 if __name__ == "__main__":

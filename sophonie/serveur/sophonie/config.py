@@ -56,7 +56,7 @@ class Secrets:
     whatsapp_phone_id: str = ""
     whatsapp_verify_token: str = ""
     whatsapp_app_secret: str = ""  # sert à vérifier la signature des webhooks Meta
-    google_token_file: str = ""
+    google_tokens: list[str] = field(default_factory=list)  # un fichier par compte Google
     base_de_donnees: str = ""
     modele: str = "claude-opus-5-5"
 
@@ -69,7 +69,7 @@ class Secrets:
             whatsapp_phone_id=os.environ.get("WHATSAPP_PHONE_ID", ""),
             whatsapp_verify_token=os.environ.get("WHATSAPP_VERIFY_TOKEN", ""),
             whatsapp_app_secret=os.environ.get("WHATSAPP_APP_SECRET", ""),
-            google_token_file=os.environ.get("GOOGLE_TOKEN_FILE", str(RACINE / "google_token.json")),
+            google_tokens=sorted(str(p) for p in RACINE.glob("google_token*.json")),
             base_de_donnees=os.environ.get("SOPHONIE_DB", str(RACINE / "sophonie.db")),
             modele=os.environ.get("SOPHONIE_MODELE", "claude-opus-5-5"),
         )

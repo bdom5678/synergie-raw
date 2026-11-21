@@ -48,7 +48,7 @@ PROFIL = Profil(prenom="Test", fuseau="Africa/Douala",
 
 def faire(client=None, jeton="secret", app_secret="meta"):
     secrets = Secrets(jeton_api=jeton, whatsapp_verify_token="verif", whatsapp_app_secret=app_secret,
-                      google_token_file="/inexistant.json")
+                      google_tokens=["/inexistant.json"])
     s = Sophonie(PROFIL, secrets, Memoire(), client=client or FauxClient())
     return s, TestClient(creer_app(s, demarrer_planificateur=False))
 
@@ -167,3 +167,30 @@ def test_profil_exemple_se_charge():
     from sophonie.config import RACINE
     p = Profil.charger(RACINE / "profil.exemple.json")
     assert p.fuseau == "Africa/Douala" and len(p.prieres) == 2
+
+
+def test_google_plusieurs_comptes(tmp_path):
+    from sophonie.integrations import Google, NonConfigure, nom_du_compte
+    assert nom_du_compte("/x/google_token_pro.json") == "pro"
+    assert nom_du_compte("/x/google_token.json") == "principal"
+    g = Google([str(tmp_path / "google_token_pro.json"), str(tmp_path / "google_token_perso.json")])
+    with pytest.raises(NonConfigure):
+        g.mails()
+
+    class Faux:
+        def __init__(self, nom, fichier):
+            self.nom, self.fichier_jeton = nom, fichier
+
+        def mails(self, requete, limite):
+            return [{"id": f"{self.nom}:1", "compte": self.nom}]
+
+        def evenements(self, debut, fin):
+            return [{"debut": "2026-11-21T10:00:00+01:00" if self.nom == "pro" else "2026-11-21T08:00:00+01:00",
+                     "compte": self.nom}]
+
+    for nom in ("pro", "perso"):
+        (tmp_path / f"google_token_{nom}.json").write_text("{}")
+    g.comptes = [Faux("pro", str(tmp_path / "google_token_pro.json")),
+                 Faux("perso", str(tmp_path / "google_token_perso.json"))]
+    assert {m["compte"] for m in g.mails()} == {"pro", "perso"}
+    assert [e["compte"] for e in g.evenements(None, None)] == ["perso", "pro"]

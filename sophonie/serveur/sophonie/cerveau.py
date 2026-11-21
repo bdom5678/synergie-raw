@@ -68,7 +68,7 @@ class Sophonie:
         self.secrets = secrets
         self.memoire = memoire
         self.client = client or anthropic.Anthropic()
-        self.google = google or Google(secrets.google_token_file)
+        self.google = google or Google(secrets.google_tokens)
         self.whatsapp = whatsapp or WhatsAppBusiness(
             secrets.whatsapp_token, secrets.whatsapp_phone_id, secrets.whatsapp_verify_token)
         self.systeme = prompt_systeme(profil)
@@ -188,7 +188,7 @@ class Sophonie:
 
         @beta_tool
         def mails(requete: str = "is:unread newer_than:1d -category:promotions -category:social") -> str:
-            """Cherche des mails Gmail (syntaxe de recherche Gmail). Renvoie expéditeur, sujet, date, extrait et id.
+            """Cherche des mails dans tous les comptes Gmail connectés (pro et perso, syntaxe de recherche Gmail). Renvoie compte, expéditeur, sujet, date, extrait et id.
 
             Args:
                 requete: Requête Gmail, par exemple "is:unread newer_than:2d" ou "from:banque".
@@ -203,7 +203,7 @@ class Sophonie:
             """Lit le texte complet d'un mail Gmail.
 
             Args:
-                mail_id: Identifiant renvoyé par l'outil mails.
+                mail_id: Identifiant renvoyé par l'outil mails (forme compte:identifiant).
             """
             try:
                 return google.lire_mail(mail_id)

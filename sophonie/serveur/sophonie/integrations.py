@@ -7,10 +7,9 @@ au lieu de planter, et Sophonie le signale.
 from __future__ import annotations
 
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -26,11 +25,12 @@ class NonConfigure(Exception):
     pass
 
 
-class Google:
-    """Lit Gmail et Google Agenda avec un jeton OAuth créé par `python -m sophonie.connexion_google`."""
+class CompteGoogle:
+    """Un compte Google (Gmail + Agenda) lu avec un jeton OAuth créé par `python -m sophonie.connexion_google`."""
 
-    def __init__(self, fichier_jeton: str):
+    def __init__(self, fichier_jeton: str, nom: str = ""):
         self.fichier_jeton = fichier_jeton
+        self.nom = nom or nom_du_compte(fichier_jeton)
         self._gmail = None
         self._agenda = None
 
@@ -38,21 +38,25 @@ class Google:
         if self._gmail is not None:
             return self._gmail, self._agenda
         if not Path(self.fichier_jeton).exists():
-            raise NonConfigure("Google n'est pas connecté (lancez : python -m sophonie.connexion_google).")
+            raise NonConfigure(f"Le compte Google « {self.nom} » n'est pas connecté.")
+        from google.auth.exceptions import RefreshError
         from google.auth.transport.requests import Request
         from google.oauth2.credentials import Credentials
         from googleapiclient.discovery import build
 
         creds = Credentials.from_authorized_user_file(self.fichier_jeton, SCOPES_GOOGLE)
         if creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            try:
+                creds.refresh(Request())
+            except RefreshError as e:
+                raise NonConfigure(f"L'accès au compte Google « {self.nom} » a expiré : "
+                                   "relancez python -m sophonie.connexion_google.") from e
             Path(self.fichier_jeton).write_text(creds.to_json(), encoding="utf-8")
         self._gmail = build("gmail", "v1", credentials=creds, cache_discovery=False)
         self._agenda = build("calendar", "v3", credentials=creds, cache_discovery=False)
         return self._gmail, self._agenda
 
-    def mails(self, requete: str = "is:unread newer_than:1d -category:promotions -category:social",
-              limite: int = 10) -> list[dict[str, Any]]:
+    def mails(self, requete: str, limite: int = 10) -> list[dict[str, Any]]:
         gmail, _ = self._services()
         res = gmail.users().messages().list(userId="me", q=requete, maxResults=limite).execute()
         sortie = []
@@ -62,7 +66,8 @@ class Google:
                 metadataHeaders=["From", "Subject", "Date"]).execute()
             entetes = {h["name"]: h["value"] for h in detail["payload"].get("headers", [])}
             sortie.append({
-                "id": m["id"],
+                "id": f"{self.nom}:{m['id']}",
+                "compte": self.nom,
                 "de": entetes.get("From", ""),
                 "sujet": entetes.get("Subject", ""),
                 "date": entetes.get("Date", ""),
@@ -90,13 +95,55 @@ class Google:
                     "debut": e["start"].get("dateTime", e["start"].get("date")),
                     "fin": e["end"].get("dateTime", e["end"].get("date")),
                     "lieu": e.get("location", ""),
-                    "agenda": cal.get("summary", ""),
+                    "agenda": f"{self.nom} / {cal.get('summary', '')}",
                 })
-        return sorted(sortie, key=lambda e: e["debut"])
+        return sortie
 
-    def evenements_du_jour(self, jour: datetime, tz: ZoneInfo) -> list[dict[str, Any]]:
-        debut = datetime(jour.year, jour.month, jour.day, tzinfo=tz)
-        return self.evenements(debut, debut + timedelta(days=1))
+
+def nom_du_compte(fichier: str) -> str:
+    """google_token_pro.json -> pro ; google_token.json -> principal."""
+    base = Path(fichier).stem
+    return base.removeprefix("google_token").lstrip("_-") or "principal"
+
+
+class Google:
+    """Regroupe tous les comptes Google connectés (pro, perso...) : les résultats sont fusionnés."""
+
+    def __init__(self, fichiers_jetons: list[str]):
+        self.comptes = [CompteGoogle(f) for f in fichiers_jetons]
+
+    def _actifs(self) -> list[CompteGoogle]:
+        actifs = [c for c in self.comptes if Path(c.fichier_jeton).exists()]
+        if not actifs:
+            raise NonConfigure("Aucun compte Google n'est connecté (lancez : python -m sophonie.connexion_google).")
+        return actifs
+
+    def _collecter(self, action) -> tuple[list[dict[str, Any]], list[str]]:
+        resultats, problemes = [], []
+        for compte in self._actifs():
+            try:
+                resultats += action(compte)
+            except NonConfigure as e:
+                problemes.append(str(e))
+        if not resultats and problemes:
+            raise NonConfigure(" ".join(problemes))
+        return resultats, problemes
+
+    def mails(self, requete: str = "is:unread newer_than:1d -category:promotions -category:social",
+              limite: int = 10) -> list[dict[str, Any]]:
+        resultats, problemes = self._collecter(lambda c: c.mails(requete, limite))
+        return resultats + [{"avertissement": p} for p in problemes]
+
+    def lire_mail(self, mail_id: str) -> str:
+        nom, _, identifiant = mail_id.partition(":")
+        for compte in self._actifs():
+            if compte.nom == nom:
+                return compte.lire_mail(identifiant)
+        raise NonConfigure(f"Compte « {nom} » inconnu.")
+
+    def evenements(self, debut: datetime, fin: datetime) -> list[dict[str, Any]]:
+        resultats, problemes = self._collecter(lambda c: c.evenements(debut, fin))
+        return sorted(resultats, key=lambda e: e["debut"]) + [{"avertissement": p} for p in problemes]
 
 
 def _texte_du_mail(partie: dict[str, Any]) -> str:
