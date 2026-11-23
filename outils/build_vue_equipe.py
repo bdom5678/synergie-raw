@@ -57,6 +57,14 @@ $('btn-export').addEventListener('click',()=>{
 """
 
 
+MIME_JS = r"""
+/* ---------- vue équipe : type MIME correct selon l'extension (sinon le téléphone traite le .pptx/.xlsx comme une archive zip) ---------- */
+const VUE_MIME={pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',csv:'text/csv;charset=utf-8',pdf:'application/pdf'};
+function vueTypeBlob(name,blob){const ext=String(name||'').split('.').pop().toLowerCase(),t=VUE_MIME[ext];
+  if(!t||!(blob instanceof Blob)||blob.type===t)return blob;return new Blob([blob],{type:t})}
+"""
+
+
 def build_inner(tool, data):
     h = tool
     n0 = len(h)
@@ -104,6 +112,10 @@ def build_inner(tool, data):
     for fn in ('function relanceInfo(', 'const quiLabel=', 'const ageLabel=', 'espTot=r=>', 'encTot=r=>', 'function commissionOf(', "$('f-q')", "$('f-st')", "$('f-pr')", "$('f-zo')"):
         if fn not in script: fail(f'« {fn} » introuvable dans l’outil')
     script = script[:i] + EXPORT_JS.strip() + "\n\n" + script[j:]
+    # 8c. type MIME des fichiers téléchargés : PptxGenJS et SheetJS produisent des blobs « application/zip » ;
+    #     sur téléphone (iOS notamment) un .pptx typé zip est décompressé et arrive sous forme de dossier.
+    if 'async function saveBlob(name,blob){' not in script: fail('fonction saveBlob introuvable dans l’outil')
+    script = script.replace('async function saveBlob(name,blob){', MIME_JS.strip() + '\nasync function saveBlob(name,blob){blob=vueTypeBlob(name,blob);', 1)
     h = h[:s_start] + script + h[s_end:]
     h = h.replace("de l'onglet Paramètres", "de la campagne").replace("de l’onglet Paramètres", "de la campagne")
     # 9. données + styles de lecture seule
