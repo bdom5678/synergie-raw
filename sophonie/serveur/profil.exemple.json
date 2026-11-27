@@ -1,0 +1,22 @@
+{
+  "prenom": "Votre prénom",
+  "fuseau": "Africa/Douala",
+  "langue": "français",
+  "vouvoiement": true,
+  "heure_lever": "07:00",
+  "heure_coucher": "23:30",
+  "foi": "chrétienne",
+  "prieres": [
+    {"nom": "Prière du matin", "heure": "07:00"},
+    {"nom": "Prière du soir", "heure": "23:00"}
+  ],
+  "briefing_matin": "07:05",
+  "point_midi": "12:45",
+  "contacts_prioritaires": ["Prénom Nom"],
+  "applications_suivies": [
+    "com.whatsapp",
+    "com.whatsapp.w4b",
+    "com.google.android.apps.messaging",
+    "com.google.android.gm"
+  ]
+}

@@ -1,0 +1,13 @@
+# Données personnelles et secrets : ne jamais publier
+profil.json
+.env
+*.db
+*.db-journal
+google_token.json
+google_client_secret.json
+__pycache__/
+.pytest_cache/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties

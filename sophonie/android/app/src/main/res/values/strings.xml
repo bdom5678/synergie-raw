@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Sophonie</string>
+    <string name="ecoute_notifications">Sophonie lit vos notifications (WhatsApp, WhatsApp Business, SMS, mails) pour vous alerter et ne rien laisser passer.</string>
+</resources>
